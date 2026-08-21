@@ -60,7 +60,12 @@ The technology stack will be selected based on scalability, performance, securit
 
 SIH1659 Project Team
 
-Team members and their respective contributions will be added here.
+G.Shamithri
+E.Sai Spoorthy
+D.Srija
+K.Sahithi Rithvika
+Glory Pranavi
+K.Hari Hansika
 
 📈 Future Scope
 
