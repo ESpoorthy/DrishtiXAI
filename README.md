@@ -56,16 +56,19 @@ To be finalized by the team.
 
 The technology stack will be selected based on scalability, performance, security, and ease of integration.
 
-## 👥 Team
+## 👥 ## Team
 
-### SIH1659 Project Team
+**Team: AetherAi**
 
-- G. Shamithri
-- E. Sai Spoorthy
-- D. Sprija
-- K. Sahithi Rithvika
-- Glory Pranavi
-- K. Hari Hansika
+| GitHub Handle | Name | Role |
+|---|---|---|
+| [@ESpoorthy](https://github.com/ESpoorthy) | Sai Spoorthy Eturu | Collaborator |
+| [@placedeliteverifypotxnicufu](https://github.com/placedeliteverifypotxnicufu) | Kommera Harihanika | Collaborator |
+| [@Duddalasrija](https://github.com/Duddalasrija) | Duddala Srija | Collaborator |
+| [@glory-pranavi](https://github.com/glory-pranavi) | Glory Pranavi B | Collaborator |
+| [@Katakam Sahithi Rithvika](https://github.com/sahithrithvika) | Katakam Sahithi Rithvika | Collaborator |
+| [@Shamithri Gowravarapu](https://github.com/sham12398) | Shamithri Gowravarapu | Repository Owner |
+
 
 📈 Future Scope
 
