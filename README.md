@@ -56,16 +56,16 @@ To be finalized by the team.
 
 The technology stack will be selected based on scalability, performance, security, and ease of integration.
 
-👥 Team
+## 👥 Team
 
-SIH1659 Project Team
+### SIH1659 Project Team
 
--G.Shamithri
--E.Sai Spoorthy
--D.Srija
--K.Sahithi Rithvika
--Glory Pranavi
--K.Hari Hansika
+- G. Shamithri
+- E. Sai Spoorthy
+- D. Sprija
+- K. Sahithi Rithvika
+- Glory Pranavi
+- K. Hari Hansika
 
 📈 Future Scope
 
