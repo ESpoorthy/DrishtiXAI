@@ -63,7 +63,7 @@ The technology stack will be selected based on scalability, performance, securit
 | GitHub Handle | Name | Role |
 |---|---|---|
 | [@ESpoorthy](https://github.com/ESpoorthy) | Sai Spoorthy Eturu | Collaborator |
-| [@Kommera-Harihansika](https://github.com/placedeliteverifypotxnicufu) | Kommera Harihanika | Collaborator |
+| [@Kommera-Harihansika](https://github.com/Kommera-Harihansika) | Kommera Harihanika | Collaborator |
 | [@Duddalasrija](https://github.com/Duddalasrija) | Duddala Srija | Collaborator |
 | [@glory-pranavi](https://github.com/glory-pranavi) | Glory Pranavi B | Collaborator |
 | [@Katakam Sahithi Rithvika](https://github.com/sahithirithvika) | Katakam Sahithi Rithvika | Collaborator |
