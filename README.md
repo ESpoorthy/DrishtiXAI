@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DrishtiXAI
 
 **Explainable AI for Diabetic Retinopathy Screening in Rural India**
@@ -586,3 +587,17 @@ This system is a **research prototype** and has not been:
 ---
 
 **Built with ❤️ for Smart India Hackathon 2026**
+=======
+## 👥 ## Team
+
+**Team: AetherAi**
+
+| GitHub Handle | Name | Role |
+|---|---|---|
+| [@ESpoorthy](https://github.com/ESpoorthy) | Sai Spoorthy Eturu | Collaborator |
+| [@Kommera-Harihansika](https://github.com/Kommera-Harihansika) | Kommera Harihanika | Collaborator |
+| [@Duddalasrija](https://github.com/Duddalasrija) | Duddala Srija | Collaborator |
+| [@glory-pranavi](https://github.com/glory-pranavi) | Glory Pranavi B | Collaborator |
+| [@Katakam Sahithi Rithvika](https://github.com/sahithirithvika) | Katakam Sahithi Rithvika | Collaborator |
+| [@Shamithri Gowravarapu](https://github.com/shami2398) | Shamithri Gowravarapu | Repository Owner |
+>>>>>>> d0088b3d7c08737eb8c1770e8484721e21c569c9
