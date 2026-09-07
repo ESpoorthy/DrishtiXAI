@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
-import { Patient, Screening, SEVERITY_LABELS, PRIORITY_COLORS, QUALITY_COLORS, ClinicianReview } from '@/types';
+import { Patient, Screening, SEVERITY_LABELS, PRIORITY_COLORS, QUALITY_COLORS, ClinicianReview, ReferralPriority } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { 
   Eye, 
@@ -31,7 +31,7 @@ export default function ScreeningDetail() {
     clinician_agrees: true,
     clinician_severity: undefined,
     clinician_notes: '',
-    final_referral_priority: 'routine',
+    final_referral_priority: ReferralPriority.ROUTINE,
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,8 +56,8 @@ export default function ScreeningDetail() {
       if (screeningData.predicted_severity !== null) {
         setReview((prev) => ({
           ...prev,
-          clinician_severity: screeningData.predicted_severity || 0,
-          final_referral_priority: screeningData.referral_priority || 'routine',
+          clinician_severity: screeningData.predicted_severity ?? 0,
+          final_referral_priority: (screeningData.referral_priority ?? ReferralPriority.ROUTINE) as ReferralPriority,
         }));
       }
     } catch (error) {
@@ -197,7 +197,7 @@ export default function ScreeningDetail() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Predicted Severity</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {screening.predicted_severity !== null 
+                    {screening.predicted_severity != null
                       ? SEVERITY_LABELS[screening.predicted_severity]
                       : 'N/A'}
                   </p>
