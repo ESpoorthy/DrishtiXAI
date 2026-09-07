@@ -1,379 +1,451 @@
 /**
- * Screening detail and clinician review page
+ * Screening detail + clinician review
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
-import { Patient, Screening, SEVERITY_LABELS, PRIORITY_COLORS, QUALITY_COLORS, ClinicianReview, ReferralPriority } from '@/types';
+import {
+  Patient, Screening, SEVERITY_LABELS, ReferralPriority,
+  ClinicianReview,
+} from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  Eye, 
-  Calendar, 
-  User, 
-  FileText, 
-  AlertTriangle,
-  CheckCircle,
-  AlertCircle 
+import {
+  Eye, AlertTriangle, CheckCircle2, AlertCircle,
+  ChevronLeft, Sparkles, User, Calendar, Activity,
+  ThumbsUp, ThumbsDown, Send, ImageOff, Loader2,
 } from 'lucide-react';
+
+/* ── helpers ── */
+function priorityBadge(p?: string | null) {
+  if (p === 'urgent')   return 'badge badge-urgent';
+  if (p === 'priority') return 'badge badge-priority';
+  return 'badge badge-routine';
+}
+function qualityBadge(q?: string | null) {
+  if (q === 'good')       return 'badge badge-good';
+  if (q === 'acceptable') return 'badge badge-acceptable';
+  return 'badge badge-poor';
+}
+function severityClass(s: number) {
+  return ['sev-0','sev-1','sev-2','sev-3','sev-4'][s] ?? 'badge-neutral';
+}
+function confColor(c: number) {
+  if (c >= 0.8) return 'bg-emerald-400';
+  if (c >= 0.6) return 'bg-amber-400';
+  return 'bg-red-400';
+}
+function fmtDate(d?: string | null) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' }); }
+  catch { return '—'; }
+}
 
 export default function ScreeningDetail() {
   const router = useRouter();
   const { id } = router.query;
   const { user } = useAuthStore();
-  
+
   const [screening, setScreening] = useState<Screening | null>(null);
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  
+  const [patient,   setPatient]   = useState<Patient | null>(null);
+  const [loading,   setLoading]   = useState(true);
+  const [imgError,  setImgError]  = useState(false);
+  const [expError,  setExpError]  = useState(false);
+  const [showReview,setShowReview]= useState(false);
+  const [submitting,setSubmitting]= useState(false);
+
   const [review, setReview] = useState<ClinicianReview>({
     clinician_agrees: true,
     clinician_severity: undefined,
     clinician_notes: '',
     final_referral_priority: ReferralPriority.ROUTINE,
   });
-  const [submitting, setSubmitting] = useState(false);
 
   const isClinician = user?.role === 'clinician' || user?.role === 'admin';
 
   useEffect(() => {
-    if (id) {
-      loadScreening(parseInt(id as string));
-    }
+    if (id) load(parseInt(id as string));
   }, [id]);
 
-  const loadScreening = async (screeningId: number) => {
+  const load = async (sid: number) => {
     try {
-      const screeningData = await api.getScreening(screeningId);
-      setScreening(screeningData);
-
-      // Load patient info
-      const patientData = await api.getPatient(screeningData.patient_id);
-      setPatient(patientData);
-
-      // Pre-fill review form
-      if (screeningData.predicted_severity !== null) {
-        setReview((prev) => ({
+      const s = await api.getScreening(sid);
+      setScreening(s);
+      const p = await api.getPatient(s.patient_id);
+      setPatient(p);
+      if (s.predicted_severity != null) {
+        setReview(prev => ({
           ...prev,
-          clinician_severity: screeningData.predicted_severity ?? 0,
-          final_referral_priority: (screeningData.referral_priority ?? ReferralPriority.ROUTINE) as ReferralPriority,
+          clinician_severity: s.predicted_severity ?? 0,
+          final_referral_priority: (s.referral_priority ?? ReferralPriority.ROUTINE) as ReferralPriority,
         }));
       }
-    } catch (error) {
-      console.error('Failed to load screening:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  const handleSubmitReview = async () => {
+  const submitReview = async () => {
     if (!screening) return;
-
     setSubmitting(true);
     try {
       await api.submitClinicianReview(screening.id, review);
-      // Reload screening
-      await loadScreening(screening.id);
-      setShowReviewForm(false);
-    } catch (error) {
-      console.error('Failed to submit review:', error);
-      alert('Failed to submit review');
-    } finally {
-      setSubmitting(false);
-    }
+      await load(screening.id);
+      setShowReview(false);
+    } catch (e) { console.error(e); alert('Failed to submit review.'); }
+    finally { setSubmitting(false); }
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading screening details...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  /* ── Loading ── */
+  if (loading) return (
+    <Layout>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-10 h-10 text-brand-500 animate-spin" />
+      </div>
+    </Layout>
+  );
 
-  if (!screening || !patient) {
-    return (
-      <Layout>
-        <div className="card text-center py-12">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-600">Screening not found</p>
-        </div>
-      </Layout>
-    );
-  }
+  if (!screening || !patient) return (
+    <Layout>
+      <div className="card flex flex-col items-center justify-center py-20 text-slate-400">
+        <AlertCircle className="w-14 h-14 mb-3 opacity-40" />
+        <p className="font-semibold">Screening not found</p>
+      </div>
+    </Layout>
+  );
+
+  const imageUrl       = api.getScreeningImageUrl(screening.image_filename);
+  const explanationUrl = screening.has_explanation
+    ? api.getExplanationImageUrl(screening.image_filename)
+    : null;
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="card bg-primary-50 border border-primary-200">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Screening Report</h1>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Patient:</span>
-                  <span className="font-semibold ml-2">{patient.full_name}</span>
+      <div className="max-w-6xl mx-auto space-y-6 animate-fade-up">
+
+        {/* ── Header ── */}
+        <div>
+          <button onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700
+                       text-xs font-medium mb-4 transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+
+          <div className="card">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-600 to-primary-500
+                                flex items-center justify-center text-white font-black text-lg shadow-md">
+                  {patient.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <span className="text-gray-600">Patient ID:</span>
-                  <span className="font-semibold ml-2">{patient.patient_id}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Eye:</span>
-                  <span className="font-semibold ml-2 capitalize">{screening.eye_side}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Date:</span>
-                  <span className="font-semibold ml-2">
-                    {new Date(screening.screening_date).toLocaleDateString()}
-                  </span>
+                  <h1 className="text-xl font-bold text-slate-900">{patient.full_name}</h1>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <User className="w-3 h-3" /> {patient.patient_id}
+                    </span>
+                    <span className="flex items-center gap-1 capitalize">
+                      <Eye className="w-3 h-3" /> {screening.eye_side} eye
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> {fmtDate(screening.screening_date)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="text-right">
-              <span className={`badge ${PRIORITY_COLORS[screening.referral_priority || 'routine']}`}>
-                {screening.referral_priority?.toUpperCase()}
-              </span>
-              {screening.is_demo_mode && (
-                <div className="mt-2">
-                  <span className="badge bg-yellow-100 text-yellow-800 text-xs">DEMO MODE</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={priorityBadge(screening.referral_priority)}>
+                  {(screening.referral_priority ?? 'routine').toUpperCase()}
+                </span>
+                {screening.is_demo_mode && (
+                  <span className="badge badge-demo">DEMO</span>
+                )}
+                <span className="badge badge-neutral capitalize">
+                  <Activity className="w-3 h-3" /> {screening.status.replace(/_/g,' ')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* ── Main grid ── */}
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left column - Images */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Original Image */}
+
+          {/* Left — images */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* Fundus image */}
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Fundus Image</h3>
-              <div className="bg-gray-100 border border-gray-300 rounded-lg overflow-hidden">
-                {/* In production, would load actual image via api.getScreeningImageUrl */}
-                <div className="aspect-video flex items-center justify-center">
-                  <Eye className="h-24 w-24 text-gray-400" />
-                </div>
-              </div>
-              <div className="mt-4 flex justify-between items-center">
-                <p className="text-sm text-gray-600">{screening.image_filename}</p>
-                <span className={`badge ${QUALITY_COLORS[screening.image_quality || 'poor']}`}>
-                  Quality: {screening.image_quality?.toUpperCase()}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-brand-500" /> Fundus Image
+                </h3>
+                <span className={qualityBadge(screening.image_quality)}>
+                  {(screening.image_quality ?? 'unknown').toUpperCase()}
                 </span>
               </div>
+
+              <div className="rounded-2xl overflow-hidden bg-black border border-slate-200 min-h-[220px]
+                              flex items-center justify-center">
+                {imgError ? (
+                  <div className="flex flex-col items-center gap-2 py-14 text-slate-400">
+                    <ImageOff className="w-10 h-10 opacity-40" />
+                    <p className="text-xs">Image unavailable</p>
+                  </div>
+                ) : (
+                  <img
+                    src={imageUrl}
+                    alt="Fundus"
+                    className="w-full object-contain max-h-72"
+                    onError={() => setImgError(true)}
+                  />
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs text-slate-400 font-mono">{screening.image_filename}</p>
+                {screening.quality_score != null && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">Quality score:</span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {(screening.quality_score * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+              {screening.quality_guidance && (
+                <div className="alert alert-info mt-3">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs">{screening.quality_guidance}</p>
+                </div>
+              )}
             </div>
 
-            {/* AI Explanation */}
+            {/* Grad-CAM explanation */}
             {screening.has_explanation && (
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Explanation (Grad-CAM)</h3>
-                <div className="bg-gray-100 border border-gray-300 rounded-lg overflow-hidden mb-4">
-                  <div className="aspect-video flex items-center justify-center">
-                    <Eye className="h-24 w-24 text-gray-400" />
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-brand-500" /> Grad-CAM Explanation
+                  </h3>
+                  <span className="badge badge-info">XAI</span>
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900 mb-2">Model Attention Summary:</p>
-                  <p className="text-sm text-blue-800">{screening.explanation_summary}</p>
+
+                <div className="rounded-2xl overflow-hidden bg-black border border-slate-200 min-h-[220px]
+                                flex items-center justify-center">
+                  {expError || !explanationUrl ? (
+                    <div className="flex flex-col items-center gap-2 py-14 text-slate-400">
+                      <ImageOff className="w-10 h-10 opacity-40" />
+                      <p className="text-xs">Heatmap unavailable</p>
+                    </div>
+                  ) : (
+                    <img
+                      src={explanationUrl}
+                      alt="Grad-CAM heatmap"
+                      className="w-full object-contain max-h-72"
+                      onError={() => setExpError(true)}
+                    />
+                  )}
+                </div>
+
+                <div className="alert alert-info mt-4">
+                  <Eye className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs">{screening.explanation_summary}</p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Right column - Analysis Results */}
-          <div className="space-y-6">
-            {/* AI Prediction */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Screening Result</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Predicted Severity</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {screening.predicted_severity != null
-                      ? SEVERITY_LABELS[screening.predicted_severity]
-                      : 'N/A'}
-                  </p>
-                </div>
+          {/* Right — analysis */}
+          <div className="space-y-5">
 
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Confidence</p>
-                  <div className="flex items-center">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
-                      <div
-                        className={`h-2 rounded-full ${
-                          (screening.prediction_confidence || 0) >= 0.8 ? 'bg-green-500' :
-                          (screening.prediction_confidence || 0) >= 0.6 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${(screening.prediction_confidence || 0) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {((screening.prediction_confidence || 0) * 100).toFixed(1)}%
+            {/* AI Result */}
+            <div className="card space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-brand-500" /> AI Result
+              </h3>
+
+              {screening.predicted_severity != null ? (
+                <>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Predicted Severity</p>
+                    <p className="text-xl font-black text-slate-900">
+                      {SEVERITY_LABELS[screening.predicted_severity]}
+                    </p>
+                    <span className={`badge mt-1.5 ${severityClass(screening.predicted_severity)}`}>
+                      Level {screening.predicted_severity}
                     </span>
                   </div>
-                </div>
 
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Model Version</p>
-                  <p className="text-sm font-mono text-gray-700">{screening.model_version}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Referral Recommendation */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Referral Recommendation</h3>
-              <div className="space-y-3">
-                <div>
-                  <span className={`badge text-base ${PRIORITY_COLORS[screening.referral_priority || 'routine']}`}>
-                    {screening.referral_priority?.toUpperCase()}
-                  </span>
-                </div>
-                {screening.referral_reasoning && (
-                  <p className="text-sm text-gray-700">{screening.referral_reasoning}</p>
-                )}
-                {screening.requires_human_review && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-                    <p className="text-sm text-yellow-800">Requires clinical review</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Clinician Review */}
-            {screening.status === 'clinician_reviewed' ? (
-              <div className="card bg-green-50 border border-green-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                  Clinician Reviewed
-                </h3>
-                <div className="space-y-3 text-sm">
                   <div>
-                    <p className="text-gray-600">Agreement with AI:</p>
-                    <p className="font-semibold text-gray-900">
-                      {screening.clinician_agrees ? 'Agrees' : 'Disagrees'}
-                    </p>
+                    <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                      <span>Confidence</span>
+                      <span className="font-bold">
+                        {((screening.prediction_confidence ?? 0) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="progress-track">
+                      <div className={`progress-fill ${confColor(screening.prediction_confidence ?? 0)}`}
+                        style={{ width: `${(screening.prediction_confidence ?? 0) * 100}%` }} />
+                    </div>
                   </div>
-                  {screening.clinician_severity !== null && screening.clinician_severity !== undefined && (
-                    <div>
-                      <p className="text-gray-600">Clinician Assessment:</p>
-                      <p className="font-semibold text-gray-900">
+
+                  {screening.model_version && (
+                    <div className="chip text-[11px]">
+                      Model: {screening.model_version}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-slate-400">Analysis not available</p>
+              )}
+            </div>
+
+            {/* Referral */}
+            <div className={`card space-y-3
+              ${screening.referral_priority === 'urgent'   ? 'border-red-200 bg-red-50/30'
+              : screening.referral_priority === 'priority' ? 'border-amber-200 bg-amber-50/30'
+              : ''}`}>
+              <h3 className="text-sm font-bold text-slate-800">Referral Recommendation</h3>
+              <span className={`${priorityBadge(screening.referral_priority)} text-sm`}>
+                {(screening.referral_priority ?? 'routine').toUpperCase()}
+              </span>
+              {screening.referral_reasoning && (
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {screening.referral_reasoning}
+                </p>
+              )}
+              {screening.requires_human_review && (
+                <div className="flex items-center gap-2 text-xs text-amber-700 font-semibold
+                                bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  Requires clinical review
+                </div>
+              )}
+            </div>
+
+            {/* Clinician review — already done */}
+            {screening.status === 'clinician_reviewed' ? (
+              <div className="card space-y-4 border-emerald-200 bg-emerald-50/30">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Clinician Reviewed
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="bg-white rounded-xl p-3 border border-slate-100">
+                    <p className="text-slate-400 mb-1">Agreement</p>
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+                      {screening.clinician_agrees
+                        ? <><ThumbsUp className="w-3.5 h-3.5 text-emerald-500" /> Agrees</>
+                        : <><ThumbsDown className="w-3.5 h-3.5 text-red-500" /> Disagrees</>}
+                    </div>
+                  </div>
+                  {screening.clinician_severity != null && (
+                    <div className="bg-white rounded-xl p-3 border border-slate-100">
+                      <p className="text-slate-400 mb-1">Assessment</p>
+                      <p className="font-semibold text-slate-800">
                         {SEVERITY_LABELS[screening.clinician_severity]}
                       </p>
                     </div>
                   )}
-                  <div>
-                    <p className="text-gray-600">Final Referral:</p>
-                    <span className={`badge ${PRIORITY_COLORS[screening.final_referral_priority || 'routine']}`}>
-                      {screening.final_referral_priority?.toUpperCase()}
-                    </span>
-                  </div>
-                  {screening.clinician_notes && (
-                    <div>
-                      <p className="text-gray-600">Notes:</p>
-                      <p className="text-gray-900 mt-1">{screening.clinician_notes}</p>
-                    </div>
-                  )}
                 </div>
+
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Final Referral</p>
+                  <span className={priorityBadge(screening.final_referral_priority)}>
+                    {(screening.final_referral_priority ?? 'routine').toUpperCase()}
+                  </span>
+                </div>
+
+                {screening.clinician_notes && (
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Notes</p>
+                    <p className="text-xs text-slate-700 bg-white border border-slate-100
+                                  rounded-xl p-3 leading-relaxed">
+                      {screening.clinician_notes}
+                    </p>
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-400">
+                  Reviewed on {fmtDate(screening.review_date)}
+                </p>
               </div>
             ) : isClinician && (
-              <div className="card">
-                <button
-                  onClick={() => setShowReviewForm(!showReviewForm)}
-                  className="w-full btn-primary"
-                >
-                  {showReviewForm ? 'Cancel Review' : 'Submit Clinical Review'}
+              /* Clinician review form */
+              <div className="card space-y-4">
+                <button onClick={() => setShowReview(v => !v)}
+                  className={showReview ? 'btn-secondary w-full' : 'btn-primary w-full'}>
+                  {showReview ? 'Cancel Review' : 'Submit Clinical Review'}
                 </button>
 
-                {showReviewForm && (
-                  <div className="mt-6 space-y-4">
+                {showReview && (
+                  <div className="space-y-4 animate-fade-up">
+                    <div className="divider" />
+
+                    {/* Agree / Disagree */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Do you agree with AI assessment?
-                      </label>
-                      <div className="flex space-x-4">
-                        <button
-                          onClick={() => setReview({ ...review, clinician_agrees: true })}
-                          className={`flex-1 py-2 px-4 border-2 rounded-lg font-medium ${
-                            review.clinician_agrees
-                              ? 'border-green-600 bg-green-50 text-green-700'
-                              : 'border-gray-300 text-gray-700'
-                          }`}
-                        >
-                          Agree
-                        </button>
-                        <button
-                          onClick={() => setReview({ ...review, clinician_agrees: false })}
-                          className={`flex-1 py-2 px-4 border-2 rounded-lg font-medium ${
-                            !review.clinician_agrees
-                              ? 'border-red-600 bg-red-50 text-red-700'
-                              : 'border-gray-300 text-gray-700'
-                          }`}
-                        >
-                          Disagree
-                        </button>
+                      <label className="label">Agreement with AI</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[true, false].map(v => (
+                          <button key={String(v)} type="button"
+                            onClick={() => setReview(r => ({ ...r, clinician_agrees: v }))}
+                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl
+                                        border-2 text-sm font-semibold transition-all
+                                        ${review.clinician_agrees === v
+                                          ? v ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                              : 'border-red-500 bg-red-50 text-red-700'
+                                          : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+                            {v ? <ThumbsUp className="w-4 h-4" /> : <ThumbsDown className="w-4 h-4" />}
+                            {v ? 'Agree' : 'Disagree'}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
+                    {/* Severity */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Clinical Assessment
-                      </label>
+                      <label className="label">Clinical Assessment</label>
                       <select
-                        value={review.clinician_severity || ''}
-                        onChange={(e) => setReview({ ...review, clinician_severity: parseInt(e.target.value) })}
-                        className="input"
-                      >
-                        {Object.entries(SEVERITY_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
+                        value={review.clinician_severity ?? ''}
+                        onChange={e => setReview(r => ({ ...r, clinician_severity: parseInt(e.target.value) }))}
+                        className="input">
+                        {Object.entries(SEVERITY_LABELS).map(([v, l]) => (
+                          <option key={v} value={v}>{l}</option>
                         ))}
                       </select>
                     </div>
 
+                    {/* Final priority */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Final Referral Priority
-                      </label>
+                      <label className="label">Final Referral Priority</label>
                       <select
                         value={review.final_referral_priority}
-                        onChange={(e) => setReview({ ...review, final_referral_priority: e.target.value as any })}
-                        className="input"
-                      >
+                        onChange={e => setReview(r => ({ ...r, final_referral_priority: e.target.value as ReferralPriority }))}
+                        className="input">
                         <option value="routine">Routine</option>
                         <option value="priority">Priority</option>
                         <option value="urgent">Urgent</option>
                       </select>
                     </div>
 
+                    {/* Notes */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Clinical Notes
-                      </label>
+                      <label className="label">Clinical Notes</label>
                       <textarea
-                        value={review.clinician_notes}
-                        onChange={(e) => setReview({ ...review, clinician_notes: e.target.value })}
-                        className="input"
-                        rows={4}
-                        placeholder="Enter clinical notes..."
-                      />
+                        value={review.clinician_notes ?? ''}
+                        onChange={e => setReview(r => ({ ...r, clinician_notes: e.target.value }))}
+                        className="input resize-none" rows={3}
+                        placeholder="Add clinical notes…" />
                     </div>
 
-                    <button
-                      onClick={handleSubmitReview}
-                      disabled={submitting}
-                      className="w-full btn-primary"
-                    >
-                      {submitting ? 'Submitting...' : 'Submit Review'}
+                    <button onClick={submitReview} disabled={submitting} className="btn-primary w-full">
+                      {submitting ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          Submitting…
+                        </span>
+                      ) : (
+                        <><Send className="w-4 h-4" /> Submit Review</>
+                      )}
                     </button>
                   </div>
                 )}

@@ -1,154 +1,162 @@
 /**
- * Patients list page
+ * Patients list
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { Patient } from '@/types';
-import { Users, Plus, Search } from 'lucide-react';
+import { Users, Plus, Search, ScanEye, Calendar, MapPin, Loader2 } from 'lucide-react';
+
+function fmtDate(d?: string | null) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }); }
+  catch { return '—'; }
+}
 
 export default function PatientsPage() {
   const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [loading,  setLoading]  = useState(true);
+  const [query,    setQuery]    = useState('');
 
-  useEffect(() => {
-    loadPatients();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const loadPatients = async () => {
-    try {
-      const data = await api.getPatients();
-      setPatients(data);
-    } catch (error) {
-      console.error('Failed to load patients:', error);
-    } finally {
-      setLoading(false);
-    }
+  const load = async () => {
+    try { setPatients(await api.getPatients()); }
+    catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  const filteredPatients = patients.filter((patient) =>
-    patient.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = patients.filter(p =>
+    p.full_name.toLowerCase().includes(query.toLowerCase()) ||
+    p.patient_id.toLowerCase().includes(query.toLowerCase()) ||
+    (p.district ?? '').toLowerCase().includes(query.toLowerCase())
   );
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-up">
+
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Patients</h1>
-            <p className="text-gray-600 mt-1">Manage patient registrations</p>
+            <h1 className="page-title">Patients</h1>
+            <p className="page-sub">
+              {patients.length} patient{patients.length !== 1 ? 's' : ''} registered
+            </p>
           </div>
-          <button
-            onClick={() => router.push('/patients/register')}
-            className="btn-primary flex items-center"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Register New Patient
+          <button onClick={() => router.push('/patients/register')} className="btn-primary">
+            <Plus className="w-4 h-4" /> Register Patient
           </button>
         </div>
 
-        {/* Search */}
-        <div className="card">
+        {/* Search bar */}
+        <div className="card py-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name or patient ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-10"
-            />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" className="input pl-10"
+              placeholder="Search by name, patient ID or district…"
+              value={query} onChange={e => setQuery(e.target.value)} />
           </div>
         </div>
 
-        {/* Patients list */}
+        {/* Table / states */}
         {loading ? (
-          <div className="card text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading patients...</p>
+          <div className="card flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
           </div>
-        ) : filteredPatients.length === 0 ? (
-          <div className="card text-center py-12">
-            <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">
-              {searchQuery ? 'No patients found' : 'No patients registered yet'}
+        ) : filtered.length === 0 ? (
+          <div className="card flex flex-col items-center justify-center py-20 text-slate-400">
+            <Users className="w-14 h-14 mb-3 opacity-30" />
+            <p className="font-semibold mb-1">
+              {query ? 'No matching patients' : 'No patients yet'}
             </p>
-            {!searchQuery && (
-              <button
-                onClick={() => router.push('/patients/register')}
-                className="btn-primary mt-4"
-              >
-                Register First Patient
+            <p className="text-xs mb-6">
+              {query ? 'Try a different search term' : 'Register your first patient to get started'}
+            </p>
+            {!query && (
+              <button onClick={() => router.push('/patients/register')} className="btn-primary">
+                <Plus className="w-4 h-4" /> Register First Patient
               </button>
             )}
           </div>
         ) : (
-          <div className="card overflow-hidden">
+          <div className="card overflow-hidden p-0">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full">
+                <thead className="bg-slate-50 border-b border-slate-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Patient ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Age / Gender
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Registered
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {['Patient', 'ID', 'Age / Gender', 'Location', 'Registered', 'Actions'].map(h => (
+                      <th key={h} className="px-5 py-3.5 text-left table-header">{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPatients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {patient.patient_id}
+                <tbody>
+                  {filtered.map(p => (
+                    <tr key={p.id} className="table-row">
+                      {/* Patient */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-primary-400
+                                          flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {p.full_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">{p.full_name}</p>
+                            {p.phone && <p className="text-xs text-slate-400">{p.phone}</p>}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {patient.full_name}
+                      {/* ID */}
+                      <td className="px-5 py-4">
+                        <span className="badge badge-info font-mono text-[11px]">
+                          {p.patient_id}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {patient.age} / {patient.gender}
+                      {/* Age / Gender */}
+                      <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
+                        {p.age} yrs · <span className="capitalize">{p.gender}</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {patient.village_name || patient.district || '-'}
+                      {/* Location */}
+                      <td className="px-5 py-4">
+                        {(p.village_name || p.district) ? (
+                          <span className="flex items-center gap-1 text-xs text-slate-500">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            {p.village_name ?? p.district}
+                            {p.district && p.village_name && `, ${p.district}`}
+                          </span>
+                        ) : <span className="text-slate-300 text-xs">—</span>}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {new Date(patient.created_at).toLocaleDateString()}
+                      {/* Date */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Calendar className="w-3 h-3" />
+                          {fmtDate(p.created_at)}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => router.push(`/screening/new?patientId=${patient.id}`)}
-                          className="text-primary-600 hover:text-primary-900 mr-4"
-                        >
-                          Screen
-                        </button>
-                        <button
-                          onClick={() => router.push(`/patients/${patient.id}`)}
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          View
-                        </button>
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => router.push(`/screening/new?patientId=${p.id}`)}
+                            className="btn-primary btn-sm">
+                            <ScanEye className="w-3.5 h-3.5" /> Screen
+                          </button>
+                          <button
+                            onClick={() => router.push(`/patients/${p.id}`)}
+                            className="btn-secondary btn-sm">
+                            View
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="px-5 py-3 border-t border-slate-100 text-xs text-slate-400 bg-slate-50">
+              Showing {filtered.length} of {patients.length} patients
             </div>
           </div>
         )}

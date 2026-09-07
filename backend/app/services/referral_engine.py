@@ -157,7 +157,8 @@ class ReferralEngine:
         risk_notes = []
         
         # Long-standing diabetes
-        if risk_factors.get("diabetes_duration_years", 0) > 10:
+        duration = risk_factors.get("diabetes_duration_years") or 0
+        if duration > 10:
             high_risk = True
             risk_notes.append("long-standing diabetes (>10 years)")
         

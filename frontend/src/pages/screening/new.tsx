@@ -1,376 +1,433 @@
 /**
- * New screening workflow page - Health Worker interface
- * Complete DR screening pipeline: Image upload → Quality check → AI analysis → Results
+ * New Screening — Upload → Analyse → Results
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
-import { Patient, Screening, SEVERITY_LABELS, PRIORITY_COLORS, QUALITY_COLORS } from '@/types';
-import { 
-  Upload, 
-  Eye, 
-  AlertCircle, 
-  CheckCircle, 
-  Loader, 
-  Image as ImageIcon,
-  AlertTriangle 
+import { Patient, Screening, SEVERITY_LABELS } from '@/types';
+import {
+  Upload, Eye, AlertCircle, CheckCircle2, Loader2,
+  ImageIcon, AlertTriangle, ChevronLeft, Sparkles,
+  ScanEye, ArrowRight, RotateCcw,
 } from 'lucide-react';
+
+type Step = 'upload' | 'uploading' | 'analyzing' | 'results';
+
+/* ── helpers ── */
+function priorityBadge(p?: string) {
+  if (p === 'urgent')   return 'badge badge-urgent';
+  if (p === 'priority') return 'badge badge-priority';
+  return 'badge badge-routine';
+}
+function qualityBadge(q?: string) {
+  if (q === 'good')       return 'badge badge-good';
+  if (q === 'acceptable') return 'badge badge-acceptable';
+  return 'badge badge-poor';
+}
+function severityClass(s: number) {
+  return ['sev-0','sev-1','sev-2','sev-3','sev-4'][s] ?? 'badge-neutral';
+}
+function confColor(c: number) {
+  if (c >= 0.8) return 'bg-emerald-400';
+  if (c >= 0.6) return 'bg-amber-400';
+  return 'bg-red-400';
+}
 
 export default function NewScreening() {
   const router = useRouter();
   const { patientId } = router.query;
-  
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [eyeSide, setEyeSide] = useState<'left' | 'right'>('right');
+
+  const [patient,   setPatient]   = useState<Patient | null>(null);
+  const [file,      setFile]      = useState<File | null>(null);
+  const [preview,   setPreview]   = useState<string | null>(null);
+  const [eyeSide,   setEyeSide]   = useState<'left' | 'right'>('right');
   const [screening, setScreening] = useState<Screening | null>(null);
-  
-  const [step, setStep] = useState<'upload' | 'uploading' | 'analyzing' | 'results'>('upload');
-  const [error, setError] = useState('');
+  const [step,      setStep]      = useState<Step>('upload');
+  const [error,     setError]     = useState('');
+  const [dragging,  setDragging]  = useState(false);
 
   useEffect(() => {
-    if (patientId) {
-      loadPatient(parseInt(patientId as string));
-    }
+    if (patientId) loadPatient(parseInt(patientId as string));
   }, [patientId]);
 
   const loadPatient = async (id: number) => {
-    try {
-      const data = await api.getPatient(id);
-      setPatient(data);
-    } catch (error) {
-      setError('Failed to load patient information');
-    }
+    try { setPatient(await api.getPatient(id)); }
+    catch { setError('Failed to load patient information.'); }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select an image file');
-        return;
-      }
-
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        setError('File size must be less than 10MB');
-        return;
-      }
-
-      setSelectedFile(file);
-      setError('');
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const processFile = (f: File) => {
+    if (!f.type.startsWith('image/')) { setError('Please select an image file (JPG / PNG).'); return; }
+    if (f.size > 10 * 1024 * 1024)    { setError('File size must be under 10 MB.'); return; }
+    setFile(f); setError('');
+    const r = new FileReader();
+    r.onloadend = () => setPreview(r.result as string);
+    r.readAsDataURL(f);
   };
 
-  const handleUploadAndAnalyze = async () => {
-    if (!selectedFile || !patient) return;
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) processFile(f);
+  };
 
-    setError('');
-    setStep('uploading');
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) processFile(f);
+  }, []);
 
+  const handleAnalyse = async () => {
+    if (!file || !patient) return;
+    setError(''); setStep('uploading');
     try {
-      // Step 1: Upload image and create screening
-      const newScreening = await api.createScreening(patient.id, eyeSide, selectedFile);
-      setScreening(newScreening);
-
-      // Step 2: Run AI analysis
-      setStep('analyzing');
-      const analyzed = await api.analyzeScreening(newScreening.id);
-      setScreening(analyzed);
-      setStep('results');
+      const s = await api.createScreening(patient.id, eyeSide, file);
+      setScreening(s); setStep('analyzing');
+      const done = await api.analyzeScreening(s.id);
+      setScreening(done); setStep('results');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Screening failed. Please try again.');
+      setError(err.response?.data?.detail ?? 'Screening failed. Please try again.');
       setStep('upload');
     }
   };
 
-  if (!patient) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader className="animate-spin h-12 w-12 text-primary-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading patient information...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const reset = () => {
+    setFile(null); setPreview(null); setScreening(null);
+    setStep('upload'); setError('');
+  };
+
+  /* loading state */
+  if (!patient) return (
+    <Layout>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-10 h-10 text-brand-500 animate-spin" />
+      </div>
+    </Layout>
+  );
+
+  /* ── Step indicator data ── */
+  const STEPS = [
+    { id: 'upload',    label: 'Upload' },
+    { id: 'analyzing', label: 'Analyse' },
+    { id: 'results',   label: 'Results' },
+  ];
+  const currentIdx = step === 'uploading' ? 0 : step === 'analyzing' ? 1 : step === 'results' ? 2 : 0;
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="card bg-primary-50 border border-primary-200">
+      <div className="max-w-4xl mx-auto space-y-6 animate-fade-up">
+
+        {/* ── Header banner ── */}
+        <div className="rounded-2xl bg-gradient-to-r from-brand-700 to-primary-600
+                        p-6 text-white shadow-lg">
+          <button onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-blue-200 hover:text-white
+                       text-xs font-medium mb-4 transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back to Patients
+          </button>
+
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">DR Screening</h1>
-              <p className="text-gray-600 mt-1">
-                Patient: <span className="font-semibold">{patient.full_name}</span> ({patient.patient_id})
+              <h1 className="text-xl font-bold">DR Screening</h1>
+              <p className="text-blue-100 text-sm mt-0.5">
+                {patient.full_name}
+                <span className="ml-2 text-blue-300 font-mono text-xs">#{patient.patient_id}</span>
               </p>
             </div>
-            <Eye className="h-12 w-12 text-primary-600" />
+            <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/20
+                            flex items-center justify-center">
+              <ScanEye className="w-6 h-6 text-white" />
+            </div>
+          </div>
+
+          {/* Step pills */}
+          <div className="flex items-center gap-2 mt-5">
+            {STEPS.map((s, i) => {
+              const done   = currentIdx > i;
+              const active = currentIdx === i;
+              return (
+                <div key={s.id} className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center
+                                  text-xs font-bold flex-shrink-0 transition-all
+                                  ${done   ? 'bg-emerald-400 text-white'
+                                   : active ? 'bg-white text-brand-700 shadow-md scale-110'
+                                   :          'bg-white/20 text-blue-200'}`}>
+                    {done ? '✓' : i + 1}
+                  </div>
+                  <span className={`text-xs font-medium
+                    ${active ? 'text-white' : done ? 'text-emerald-300' : 'text-blue-300'}`}>
+                    {s.label}
+                  </span>
+                  {i < STEPS.length - 1 && (
+                    <div className="w-8 h-px bg-white/25 mx-1" />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
-            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="alert alert-error">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {/* Upload Step */}
+        {/* ══════════════ UPLOAD STEP ══════════════ */}
         {step === 'upload' && (
           <div className="card space-y-6">
+
+            {/* Eye selector */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">1. Capture Retinal Image</h3>
-              
-              {/* Eye selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Eye
-                </label>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setEyeSide('left')}
-                    className={`flex-1 py-3 px-4 border-2 rounded-lg font-medium transition-colors ${
-                      eyeSide === 'left'
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                    }`}
-                  >
-                    Left Eye
+              <label className="label">Select Eye</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['left', 'right'] as const).map(side => (
+                  <button key={side} type="button" onClick={() => setEyeSide(side)}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl
+                                border-2 font-semibold text-sm transition-all
+                                ${eyeSide === side
+                                  ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm'
+                                  : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}`}>
+                    <Eye className="w-4 h-4" />
+                    {side.charAt(0).toUpperCase() + side.slice(1)} Eye
                   </button>
-                  <button
-                    onClick={() => setEyeSide('right')}
-                    className={`flex-1 py-3 px-4 border-2 rounded-lg font-medium transition-colors ${
-                      eyeSide === 'right'
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                    }`}
-                  >
-                    Right Eye
-                  </button>
-                </div>
-              </div>
-
-              {/* File upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Fundus Image
-                </label>
-                {!previewUrl ? (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-primary-400 transition-colors">
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-2">Drop image here or click to browse</p>
-                    <p className="text-sm text-gray-500 mb-4">JPG, JPEG, PNG (max 10MB)</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="btn-primary cursor-pointer inline-block">
-                      Select Image
-                    </label>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="relative border-2 border-gray-300 rounded-lg overflow-hidden">
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="w-full h-auto"
-                      />
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-600">
-                        <ImageIcon className="inline h-4 w-4 mr-1" />
-                        {selectedFile?.name}
-                      </p>
-                      <button
-                        onClick={() => {
-                          setSelectedFile(null);
-                          setPreviewUrl(null);
-                        }}
-                        className="text-sm text-red-600 hover:text-red-800"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
 
-            {selectedFile && (
-              <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => router.back()}
-                  className="btn-secondary"
-                >
-                  Cancel
+            {/* Drop zone / preview */}
+            {!preview ? (
+              <label htmlFor="file-input"
+                onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+                className={`flex flex-col items-center justify-center gap-4
+                            border-2 border-dashed rounded-2xl p-14 cursor-pointer
+                            transition-all duration-200
+                            ${dragging
+                              ? 'border-brand-400 bg-brand-50 scale-[1.01]'
+                              : 'border-slate-300 hover:border-brand-300 hover:bg-slate-50'}`}>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center
+                                transition-colors
+                                ${dragging ? 'bg-brand-100' : 'bg-slate-100'}`}>
+                  <Upload className={`w-8 h-8 transition-colors
+                                     ${dragging ? 'text-brand-500' : 'text-slate-400'}`} />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Drag & drop or <span className="text-brand-600">browse</span>
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">JPG, JPEG, PNG · Max 10 MB</p>
+                </div>
+                <input id="file-input" type="file" accept="image/*"
+                  onChange={handleFileInput} className="hidden" />
+              </label>
+            ) : (
+              <div className="space-y-3">
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-black">
+                  <img src={preview} alt="Fundus preview"
+                    className="w-full max-h-72 object-contain" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+                      <ImageIcon className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <span className="text-white text-xs font-medium truncate max-w-[200px]">
+                      {file?.name}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-3 right-3">
+                    <span className="badge badge-good">Ready</span>
+                  </div>
+                </div>
+                <button onClick={reset}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700
+                             font-medium transition-colors">
+                  <RotateCcw className="w-3.5 h-3.5" /> Remove & re-upload
                 </button>
-                <button
-                  onClick={handleUploadAndAnalyze}
-                  className="btn-primary"
-                >
-                  Upload & Analyze
+              </div>
+            )}
+
+            {/* Action row */}
+            {file && (
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button onClick={() => router.back()} className="btn-secondary">Cancel</button>
+                <button onClick={handleAnalyse} className="btn-primary">
+                  <Sparkles className="w-4 h-4" /> Upload & Analyse
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Processing Steps */}
+        {/* ══════════════ PROCESSING ══════════════ */}
         {(step === 'uploading' || step === 'analyzing') && (
-          <div className="card text-center py-12">
-            <Loader className="animate-spin h-16 w-16 text-primary-600 mx-auto mb-6" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {step === 'uploading' ? 'Uploading Image...' : 'Analyzing Image...'}
-            </h3>
-            <p className="text-gray-600">
-              {step === 'uploading' 
-                ? 'Please wait while we upload the retinal image' 
-                : 'Running AI screening pipeline: Quality check → DR prediction → Explainability'}
-            </p>
-            <div className="mt-6 max-w-md mx-auto">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-primary-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+          <div className="card flex flex-col items-center justify-center py-20 gap-6">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-brand-50 flex items-center justify-center">
+                <Eye className="w-10 h-10 text-brand-400" />
               </div>
+              <div className="absolute inset-0 rounded-full border-4 border-brand-200
+                              border-t-brand-600 animate-spin" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-slate-900">
+                {step === 'uploading' ? 'Uploading Image…' : 'Running AI Pipeline…'}
+              </h3>
+              <p className="text-slate-500 text-sm mt-1.5 max-w-xs">
+                {step === 'uploading'
+                  ? 'Securely saving fundus image'
+                  : 'Quality check → EfficientNet prediction → Grad-CAM → Referral engine'}
+              </p>
+            </div>
+            <div className="w-56 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-primary-400
+                              animate-pulse-soft" style={{ width: step === 'uploading' ? '35%' : '75%',
+                              transition: 'width 0.5s ease' }} />
             </div>
           </div>
         )}
 
-        {/* Results */}
+        {/* ══════════════ RESULTS ══════════════ */}
         {step === 'results' && screening && (
-          <div className="space-y-6">
-            {/* Demo mode warning */}
-            {screening.is_demo_mode && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-yellow-800">DEMONSTRATION MODE</p>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      This is a synthetic prediction for demonstration purposes. Not for clinical use.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          <div className="space-y-5 animate-fade-up">
 
-            {/* Image Quality */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Image Quality Assessment</h3>
-              <div className="flex items-center justify-between mb-4">
+            {/* Demo banner */}
+            {screening.is_demo_mode && (
+              <div className="alert alert-warning">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className={`badge ${QUALITY_COLORS[screening.image_quality || 'poor']}`}>
-                    {screening.image_quality?.toUpperCase()}
-                  </span>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Quality Score: {((screening.quality_score || 0) * 100).toFixed(1)}%
+                  <p className="font-semibold text-sm">DEMONSTRATION MODE</p>
+                  <p className="text-xs mt-0.5 opacity-80">
+                    Synthetic prediction for demo purposes only. Not for clinical use.
                   </p>
                 </div>
-                {screening.image_quality === 'good' ? (
-                  <CheckCircle className="h-12 w-12 text-green-500" />
-                ) : screening.image_quality === 'acceptable' ? (
-                  <AlertCircle className="h-12 w-12 text-yellow-500" />
-                ) : (
-                  <AlertTriangle className="h-12 w-12 text-red-500" />
+              </div>
+            )}
+
+            {/* Three result cards */}
+            <div className="grid md:grid-cols-3 gap-5">
+
+              {/* Quality */}
+              <div className="card space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Image Quality
+                  </h4>
+                  {screening.image_quality === 'good'
+                    ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    : <AlertCircle  className="w-5 h-5 text-amber-500" />}
+                </div>
+                <div>
+                  <span className={qualityBadge(screening.image_quality)}>
+                    {(screening.image_quality ?? 'unknown').toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                    <span>Score</span>
+                    <span>{((screening.quality_score ?? 0) * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="progress-track">
+                    <div className="progress-fill bg-brand-400"
+                      style={{ width: `${(screening.quality_score ?? 0) * 100}%` }} />
+                  </div>
+                </div>
+                {screening.quality_guidance && (
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {screening.quality_guidance}
+                  </p>
                 )}
               </div>
-              
-              {screening.quality_guidance && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">{screening.quality_guidance}</p>
+
+              {/* AI Prediction */}
+              {screening.predicted_severity != null && (
+                <div className="card space-y-4">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    AI Prediction
+                  </h4>
+                  <div>
+                    <p className="text-xl font-black text-slate-900">
+                      {SEVERITY_LABELS[screening.predicted_severity]}
+                    </p>
+                    <span className={`badge mt-1.5 ${severityClass(screening.predicted_severity)}`}>
+                      Severity {screening.predicted_severity}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                      <span>Confidence</span>
+                      <span>{((screening.prediction_confidence ?? 0) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="progress-track">
+                      <div className={`progress-fill ${confColor(screening.prediction_confidence ?? 0)}`}
+                        style={{ width: `${(screening.prediction_confidence ?? 0) * 100}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Referral */}
+              {screening.referral_priority && (
+                <div className={`card space-y-4 ${
+                  screening.referral_priority === 'urgent'
+                    ? 'border-red-200 bg-red-50/40'
+                    : screening.referral_priority === 'priority'
+                    ? 'border-amber-200 bg-amber-50/40'
+                    : ''}`}>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Referral Priority
+                  </h4>
+                  <span className={`${priorityBadge(screening.referral_priority)} text-sm`}>
+                    {screening.referral_priority.toUpperCase()}
+                  </span>
+                  {screening.referral_reasoning && (
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {screening.referral_reasoning}
+                    </p>
+                  )}
+                  {screening.requires_human_review && (
+                    <div className="flex items-center gap-2 text-xs text-amber-700 font-medium">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      Requires clinical review
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* DR Prediction */}
-            {screening.predicted_severity !== null && screening.predicted_severity !== undefined && (
-              <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Screening Result</h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Predicted Severity</p>
-                    <p className="text-3xl font-bold text-gray-900 mb-2">
-                      {SEVERITY_LABELS[screening.predicted_severity]}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Confidence: {((screening.prediction_confidence || 0) * 100).toFixed(1)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Referral Priority</p>
-                    <span className={`inline-block badge text-lg ${PRIORITY_COLORS[screening.referral_priority || 'routine']}`}>
-                      {screening.referral_priority?.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-
-                {screening.referral_reasoning && (
-                  <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <p className="text-sm font-medium text-gray-900 mb-2">Recommendation:</p>
-                    <p className="text-sm text-gray-700">{screening.referral_reasoning}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* AI Explanation */}
+            {/* Explanation */}
             {screening.has_explanation && (
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Explanation</h3>
-                <p className="text-sm text-gray-700 mb-4">{screening.explanation_summary}</p>
-                
-                {/* Placeholder for heatmap - would show actual image in production */}
-                <div className="bg-gray-100 border border-gray-300 rounded-lg p-8 text-center">
-                  <Eye className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Explanation heatmap visualization</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    (View full report for detailed visual explanation)
-                  </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-brand-500" />
+                  <h4 className="text-sm font-bold text-slate-800">AI Explanation (Grad-CAM)</h4>
+                  <span className="badge badge-info ml-auto">XAI</span>
+                </div>
+                <div className="alert alert-info">
+                  <Eye className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm">{screening.explanation_summary}</p>
                 </div>
               </div>
             )}
 
             {/* Actions */}
-            <div className="card">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Screening Complete</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Results saved • Screening ID: {screening.id}
-                  </p>
-                </div>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => router.push('/dashboard')}
-                    className="btn-secondary"
-                  >
-                    Back to Dashboard
-                  </button>
-                  <button
-                    onClick={() => router.push(`/screening/${screening.id}`)}
-                    className="btn-primary"
-                  >
-                    View Full Report
-                  </button>
-                </div>
+            <div className="card flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <p className="font-bold text-slate-800">Screening Complete</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Saved · Screening ID: <span className="font-mono">{screening.id}</span>
+                </p>
+              </div>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button onClick={() => router.push('/dashboard')} className="btn-secondary flex-1 sm:flex-none">
+                  Dashboard
+                </button>
+                <button onClick={() => router.push(`/screening/${screening.id}`)}
+                  className="btn-primary flex-1 sm:flex-none">
+                  Full Report <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>

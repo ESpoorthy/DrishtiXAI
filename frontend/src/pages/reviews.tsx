@@ -1,117 +1,170 @@
 /**
- * Reviews page - Clinician interface for pending reviews
+ * Clinical Reviews — high-priority case queue
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
-import { SEVERITY_LABELS, PRIORITY_COLORS } from '@/types';
-import { AlertTriangle, Clock, FileText } from 'lucide-react';
+import { SEVERITY_LABELS } from '@/types';
+import {
+  AlertTriangle, Clock, ArrowRight, ClipboardCheck,
+  Loader2, CheckCircle2, ScanEye,
+} from 'lucide-react';
+
+function fmtDate(d?: string | null) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short' }); }
+  catch { return '—'; }
+}
+
+function priorityBadge(p?: string) {
+  if (p === 'urgent')   return 'badge badge-urgent';
+  if (p === 'priority') return 'badge badge-priority';
+  return 'badge badge-routine';
+}
 
 export default function ReviewsPage() {
   const router = useRouter();
-  const [cases, setCases] = useState<any[]>([]);
+  const [cases,   setCases]   = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadHighPriorityCases();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const loadHighPriorityCases = async () => {
-    try {
-      const data = await api.getHighPriorityCases();
-      setCases(data);
-    } catch (error) {
-      console.error('Failed to load cases:', error);
-    } finally {
-      setLoading(false);
-    }
+  const load = async () => {
+    try { setCases(await api.getHighPriorityCases()); }
+    catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
+
+  const urgentCount   = cases.filter(c => c.referral_priority === 'urgent').length;
+  const priorityCount = cases.filter(c => c.referral_priority === 'priority').length;
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-up">
+
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Clinical Reviews</h1>
-          <p className="text-gray-600 mt-1">Cases requiring urgent attention or clinical review</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">Clinical Reviews</h1>
+            <p className="page-sub">Cases requiring attention or clinical review</p>
+          </div>
+          {!loading && cases.length > 0 && (
+            <div className="flex items-center gap-2">
+              {urgentCount > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl
+                                bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {urgentCount} Urgent
+                </div>
+              )}
+              {priorityCount > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl
+                                bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5" />
+                  {priorityCount} Priority
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
+        {/* Content */}
         {loading ? (
-          <div className="card text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading cases...</p>
+          <div className="card flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
           </div>
         ) : cases.length === 0 ? (
-          <div className="card text-center py-12">
-            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">No pending reviews</p>
-            <p className="text-sm text-gray-500">All high-priority cases have been reviewed</p>
+          <div className="card flex flex-col items-center justify-center py-20 text-slate-400">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200
+                            flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+            </div>
+            <p className="font-semibold text-slate-600 mb-1">All clear!</p>
+            <p className="text-sm">No pending reviews right now</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {cases.map((caseItem) => (
-              <div
-                key={caseItem.screening_id}
-                className="card hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => router.push(`/screening/${caseItem.screening_id}`)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {caseItem.patient_name}
-                      </h3>
-                      <span className={`badge ${PRIORITY_COLORS[caseItem.referral_priority || 'routine']}`}>
-                        {caseItem.referral_priority?.toUpperCase()}
-                      </span>
+          <div className="space-y-3">
+            {cases.map(c => {
+              const priority = c.referral_priority ?? 'routine';
+              const isUrgent = priority === 'urgent';
+              return (
+                <div key={c.screening_id}
+                  onClick={() => router.push(`/screening/${c.screening_id}`)}
+                  className={`card-hover p-5 transition-all
+                    ${isUrgent ? 'border-red-200 hover:border-red-300' : ''}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+
+                      {/* Avatar */}
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center
+                                      text-white font-black text-base flex-shrink-0 shadow-sm
+                                      ${isUrgent
+                                        ? 'bg-gradient-to-br from-red-500 to-orange-400'
+                                        : 'bg-gradient-to-br from-amber-500 to-yellow-400'}`}>
+                        {(c.patient_name ?? '?').charAt(0).toUpperCase()}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <h3 className="text-base font-bold text-slate-900 truncate">
+                            {c.patient_name ?? '—'}
+                          </h3>
+                          <span className={priorityBadge(priority)}>
+                            {priority.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1">
+                          {[
+                            { label: 'Patient ID', val: c.patient_id ?? '—' },
+                            { label: 'Age / Eye',  val: `${c.age ?? '?'} · ${c.eye_side ?? '—'}` },
+                            {
+                              label: 'AI Prediction',
+                              val: c.severity != null
+                                ? SEVERITY_LABELS[c.severity]
+                                : '—',
+                            },
+                            {
+                              label: 'Confidence',
+                              val: c.confidence ? `${(c.confidence * 100).toFixed(1)}%` : '—',
+                            },
+                          ].map(({ label, val }) => (
+                            <div key={label}>
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</p>
+                              <p className="text-xs font-semibold text-slate-700 mt-0.5">{val}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-3 mt-2.5 text-xs text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {fmtDate(c.date)}
+                          </span>
+                          {c.reason && (
+                            <span className="flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-amber-400" />
+                              {c.reason}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Patient ID</p>
-                        <p className="font-medium text-gray-900">{caseItem.patient_id}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Age / Eye</p>
-                        <p className="font-medium text-gray-900">
-                          {caseItem.age || 'N/A'} / {caseItem.eye_side}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">AI Prediction</p>
-                        <p className="font-medium text-gray-900">
-                          {caseItem.severity !== null ? SEVERITY_LABELS[caseItem.severity] : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Confidence</p>
-                        <p className="font-medium text-gray-900">
-                          {caseItem.confidence ? `${(caseItem.confidence * 100).toFixed(1)}%` : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center space-x-4 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {new Date(caseItem.date).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-1 text-yellow-600" />
-                        {caseItem.reason}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <button className="btn-primary text-sm">
-                      Review Case
+                    {/* CTA */}
+                    <button
+                      onClick={e => { e.stopPropagation(); router.push(`/screening/${c.screening_id}`); }}
+                      className={`btn-sm flex items-center gap-1.5 flex-shrink-0
+                                  ${isUrgent ? 'btn-danger' : 'btn-primary'}`}>
+                      <ScanEye className="w-3.5 h-3.5" />
+                      Review
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

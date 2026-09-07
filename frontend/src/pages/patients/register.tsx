@@ -1,301 +1,192 @@
 /**
- * Patient registration page - Health Worker interface
+ * Register patient
  */
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { PatientCreate } from '@/types';
-import { UserPlus, AlertCircle } from 'lucide-react';
+import { UserPlus, AlertCircle, ChevronLeft, ScanEye } from 'lucide-react';
+
+const SECTION = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <div className="flex items-center gap-3 mb-4">
+      <div className="h-px flex-1 bg-slate-100" />
+      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap px-2">
+        {title}
+      </span>
+      <div className="h-px flex-1 bg-slate-100" />
+    </div>
+    <div className="grid sm:grid-cols-2 gap-4">{children}</div>
+  </div>
+);
+
+const FIELD = ({
+  label, required, hint, full, children,
+}: {
+  label: string; required?: boolean; hint?: string; full?: boolean; children: React.ReactNode;
+}) => (
+  <div className={full ? 'sm:col-span-2' : ''}>
+    <label className="label">
+      {label} {required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    {children}
+    {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+  </div>
+);
 
 export default function RegisterPatient() {
-  const router = useRouter();
+  const router  = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState<PatientCreate>({
-    patient_id: '',
-    full_name: '',
-    age: 0,
-    gender: 'male',
-    phone: '',
-    village_name: '',
-    district: '',
-    state: '',
-    has_diabetes: 'yes',
-    diabetes_duration_years: undefined,
-    has_hypertension: 'no',
-    previous_eye_exam: 'no',
+  const [error,   setError]   = useState('');
+  const [form,    setForm]    = useState<PatientCreate>({
+    patient_id: '', full_name: '', age: 0, gender: 'male',
+    phone: '', village_name: '', district: '', state: '',
+    has_diabetes: 'yes', diabetes_duration_years: undefined,
+    has_hypertension: 'no', previous_eye_exam: 'no',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'age' || name === 'diabetes_duration_years' 
-        ? value ? parseInt(value) : undefined 
-        : value,
+    setForm(p => ({
+      ...p,
+      [name]: name === 'age' || name === 'diabetes_duration_years'
+        ? (value ? parseInt(value) : undefined) : value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(''); setLoading(true);
     try {
-      const patient = await api.createPatient(formData);
-      // Redirect to screening page
-      router.push(`/screening/new?patientId=${patient.id}`);
+      const p = await api.createPatient(form);
+      router.push(`/screening/new?patientId=${p.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to register patient');
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.detail ?? 'Failed to register patient.');
+    } finally { setLoading(false); }
   };
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-up">
+
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <UserPlus className="h-8 w-8 mr-3" />
-            Register New Patient
+          <button onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700
+                       text-xs font-medium mb-4 transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+          <h1 className="page-title flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-primary-500
+                            flex items-center justify-center shadow-md">
+              <UserPlus className="w-5 h-5 text-white" />
+            </div>
+            Register Patient
           </h1>
-          <p className="text-gray-600 mt-1">Enter patient information for screening</p>
+          <p className="page-sub mt-1">
+            Fill in the patient's details to begin DR screening
+          </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
-            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="alert alert-error">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <p className="text-sm">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="card space-y-6">
-          {/* Basic Information */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Patient ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="patient_id"
-                  value={formData.patient_id}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Enter unique patient ID"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Facility-assigned identifier</p>
-              </div>
+        <form onSubmit={submit} className="card space-y-8">
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Enter full name"
-                  required
-                />
-              </div>
+          <SECTION title="Basic Information">
+            <FIELD label="Patient ID" required hint="Unique facility-assigned identifier">
+              <input name="patient_id" type="text" className="input"
+                value={form.patient_id} onChange={set}
+                placeholder="e.g. PHC-2026-001" required />
+            </FIELD>
+            <FIELD label="Full Name" required>
+              <input name="full_name" type="text" className="input"
+                value={form.full_name} onChange={set}
+                placeholder="Patient's full name" required />
+            </FIELD>
+            <FIELD label="Age" required>
+              <input name="age" type="number" className="input"
+                value={form.age || ''} onChange={set}
+                placeholder="Age in years" min={1} max={120} required />
+            </FIELD>
+            <FIELD label="Gender" required>
+              <select name="gender" className="input" value={form.gender} onChange={set} required>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+              </select>
+            </FIELD>
+          </SECTION>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Age <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="age"
-                  value={formData.age || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Age in years"
-                  min="0"
-                  max="120"
-                  required
-                />
-              </div>
+          <SECTION title="Contact & Location">
+            <FIELD label="Phone Number">
+              <input name="phone" type="tel" className="input"
+                value={form.phone} onChange={set} placeholder="Optional" />
+            </FIELD>
+            <FIELD label="Village / Town">
+              <input name="village_name" type="text" className="input"
+                value={form.village_name} onChange={set} placeholder="Optional" />
+            </FIELD>
+            <FIELD label="District">
+              <input name="district" type="text" className="input"
+                value={form.district} onChange={set} placeholder="Optional" />
+            </FIELD>
+            <FIELD label="State">
+              <input name="state" type="text" className="input"
+                value={form.state} onChange={set} placeholder="Optional" />
+            </FIELD>
+          </SECTION>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="input"
-                  required
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          <SECTION title="Medical History">
+            <FIELD label="Has Diabetes?">
+              <select name="has_diabetes" className="input" value={form.has_diabetes} onChange={set}>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </FIELD>
+            {form.has_diabetes === 'yes' && (
+              <FIELD label="Diabetes Duration (years)">
+                <input name="diabetes_duration_years" type="number" className="input"
+                  value={form.diabetes_duration_years ?? ''} onChange={set}
+                  placeholder="e.g. 5" min={0} />
+              </FIELD>
+            )}
+            <FIELD label="Has Hypertension?">
+              <select name="has_hypertension" className="input" value={form.has_hypertension} onChange={set}>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </FIELD>
+            <FIELD label="Previous Eye Examination?">
+              <select name="previous_eye_exam" className="input" value={form.previous_eye_exam} onChange={set}>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </FIELD>
+          </SECTION>
 
-          {/* Contact Information */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact & Location</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Optional"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Village/Town
-                </label>
-                <input
-                  type="text"
-                  name="village_name"
-                  value={formData.village_name}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Optional"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  District
-                </label>
-                <input
-                  type="text"
-                  name="district"
-                  value={formData.district}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Optional"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Optional"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Medical History */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Medical History (for risk assessment)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Has Diabetes?
-                </label>
-                <select
-                  name="has_diabetes"
-                  value={formData.has_diabetes}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                  <option value="unknown">Unknown</option>
-                </select>
-              </div>
-
-              {formData.has_diabetes === 'yes' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Diabetes Duration (years)
-                  </label>
-                  <input
-                    type="number"
-                    name="diabetes_duration_years"
-                    value={formData.diabetes_duration_years || ''}
-                    onChange={handleChange}
-                    className="input"
-                    placeholder="Optional"
-                    min="0"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Has Hypertension?
-                </label>
-                <select
-                  name="has_hypertension"
-                  value={formData.has_hypertension}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                  <option value="unknown">Unknown</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Previous Eye Examination?
-                </label>
-                <select
-                  name="previous_eye_exam"
-                  value={formData.previous_eye_exam}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                  <option value="unknown">Unknown</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="btn-secondary"
-              disabled={loading}
-            >
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <button type="button" onClick={() => router.back()}
+              className="btn-secondary" disabled={loading}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Registering...' : 'Register & Proceed to Screening'}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Registering…
+                </span>
+              ) : (
+                <><ScanEye className="w-4 h-4" /> Register & Start Screening</>
+              )}
             </button>
           </div>
         </form>

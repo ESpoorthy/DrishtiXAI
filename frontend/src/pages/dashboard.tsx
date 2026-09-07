@@ -1,208 +1,236 @@
 /**
- * Main dashboard page
+ * Dashboard
  */
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { DashboardStatistics } from '@/types';
-import { 
-  Activity, 
-  Users, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock,
-  TrendingUp 
+import {
+  ScanEye, Users, AlertTriangle, Clock,
+  TrendingUp, CheckCircle2, ArrowRight, Eye,
+  Activity, BarChart2,
 } from 'lucide-react';
 
+const SEV = [
+  { key: 'no_dr',        label: 'No DR',            colour: 'bg-emerald-400' },
+  { key: 'mild',         label: 'Mild NPDR',         colour: 'bg-yellow-400' },
+  { key: 'moderate',     label: 'Moderate NPDR',     colour: 'bg-orange-400' },
+  { key: 'severe',       label: 'Severe NPDR',       colour: 'bg-red-500' },
+  { key: 'proliferative',label: 'Proliferative DR',  colour: 'bg-rose-700' },
+];
+
+function pct(n: number, total: number) {
+  return total > 0 ? Math.round((n / total) * 100) : 0;
+}
+function fmtDate(d?: string | null) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short' }); }
+  catch { return '—'; }
+}
+
 export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStatistics | null>(null);
-  const [recentScreenings, setRecentScreenings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [stats,  setStats]  = useState<DashboardStatistics | null>(null);
+  const [recent, setRecent] = useState<any[]>([]);
+  const [loading,setLoading]= useState(true);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const loadDashboard = async () => {
+  const load = async () => {
     try {
-      const [statsData, recentData] = await Promise.all([
+      const [s, r] = await Promise.all([
         api.getDashboardStatistics(),
-        api.getRecentScreenings(5),
+        api.getRecentScreenings(6),
       ]);
-      setStats(statsData);
-      setRecentScreenings(recentData);
-    } catch (error) {
-      console.error('Failed to load dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
+      setStats(s); setRecent(r);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  if (loading) return (
+    <Layout>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        {[...Array(4)].map((_,i) => <div key={i} className="skeleton h-28" />)}
+      </div>
+      <div className="grid lg:grid-cols-5 gap-6">
+        <div className="skeleton h-64 lg:col-span-2" />
+        <div className="skeleton h-64 lg:col-span-3" />
+      </div>
+    </Layout>
+  );
 
-  const statCards = [
-    {
-      title: 'Total Screenings',
-      value: stats?.total_screenings || 0,
-      icon: Activity,
-      color: 'bg-blue-500',
-    },
-    {
-      title: "Today's Screenings",
-      value: stats?.today_screenings || 0,
-      icon: Clock,
-      color: 'bg-green-500',
-    },
-    {
-      title: 'High Risk Cases',
-      value: stats?.high_risk_cases || 0,
-      icon: AlertTriangle,
-      color: 'bg-red-500',
-    },
-    {
-      title: 'Pending Reviews',
-      value: stats?.pending_reviews || 0,
-      icon: CheckCircle,
-      color: 'bg-yellow-500',
-    },
+  const total = stats?.total_screenings ?? 0;
+
+  const STAT_CARDS = [
+    { label: 'Total Screenings',  val: total,                        icon: ScanEye,      gradient: 'from-brand-600 to-brand-500',     ring: 'ring-brand-100' },
+    { label: "Today's Screenings",val: stats?.today_screenings ?? 0, icon: Clock,        gradient: 'from-emerald-600 to-emerald-500', ring: 'ring-emerald-100' },
+    { label: 'High Risk Cases',   val: stats?.high_risk_cases ?? 0,  icon: AlertTriangle,gradient: 'from-red-600 to-orange-500',      ring: 'ring-red-100' },
+    { label: 'Pending Reviews',   val: stats?.pending_reviews ?? 0,  icon: CheckCircle2, gradient: 'from-amber-600 to-yellow-500',    ring: 'ring-amber-100' },
   ];
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-7 animate-fade-up">
+
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Overview of screening activities</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-sub">Overview of screening activities</p>
+          </div>
+          <button onClick={() => router.push('/patients/register')} className="btn-primary">
+            <Eye className="w-4 h-4" /> New Screening
+          </button>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((stat) => {
-            const Icon = stat.icon;
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {STAT_CARDS.map(c => {
+            const Icon = c.icon;
             return (
-              <div key={stat.title} className="card">
+              <div key={c.label} className="card flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${stat.color}`}>
-                    <Icon className="h-6 w-6 text-white" />
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.label}</p>
+                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${c.gradient}
+                                  flex items-center justify-center shadow-md ring-4 ${c.ring}`}>
+                    <Icon className="w-4 h-4 text-white" />
                   </div>
                 </div>
+                <p className="text-3xl font-black text-slate-900">{c.val.toLocaleString()}</p>
+                <div className="h-1 rounded-full bg-gradient-to-r opacity-30" />
               </div>
             );
           })}
         </div>
 
-        {/* Charts and recent activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Charts row */}
+        <div className="grid lg:grid-cols-5 gap-6">
+
           {/* Severity distribution */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Severity Distribution
-            </h3>
-            <div className="space-y-3">
-              {stats && [
-                { label: 'No DR', value: stats.severity_distribution.no_dr, color: 'bg-green-500' },
-                { label: 'Mild NPDR', value: stats.severity_distribution.mild, color: 'bg-yellow-400' },
-                { label: 'Moderate NPDR', value: stats.severity_distribution.moderate, color: 'bg-orange-500' },
-                { label: 'Severe NPDR', value: stats.severity_distribution.severe, color: 'bg-red-500' },
-                { label: 'Proliferative DR', value: stats.severity_distribution.proliferative, color: 'bg-red-700' },
-              ].map((item) => {
-                const total = stats.total_screenings || 1;
-                const percentage = (item.value / total) * 100;
-                return (
-                  <div key={item.label}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-700">{item.label}</span>
-                      <span className="text-gray-600">{item.value} ({percentage.toFixed(1)}%)</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${item.color}`}
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="card lg:col-span-2">
+            <div className="flex items-center gap-2 mb-5">
+              <BarChart2 className="w-4 h-4 text-brand-600" />
+              <h3 className="font-bold text-slate-800 text-sm">Severity Distribution</h3>
             </div>
+            {total === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-slate-300">
+                <Activity className="w-10 h-10 mb-2" />
+                <p className="text-xs">No screenings yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {SEV.map(s => {
+                  const val = (stats?.severity_distribution as any)?.[s.key] ?? 0;
+                  const p   = pct(val, total);
+                  return (
+                    <div key={s.key}>
+                      <div className="flex justify-between text-xs mb-1.5">
+                        <span className="font-medium text-slate-700">{s.label}</span>
+                        <span className="text-slate-400">{val} <span className="text-slate-300">·</span> {p}%</span>
+                      </div>
+                      <div className="progress-track">
+                        <div className={`progress-fill ${s.colour} animate-progress-bar`}
+                             style={{ width: `${p}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Recent screenings */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Recent Screenings
-            </h3>
-            <div className="space-y-3">
-              {recentScreenings.length === 0 ? (
-                <p className="text-gray-500 text-sm">No recent screenings</p>
-              ) : (
-                recentScreenings.map((screening) => (
-                  <div
-                    key={screening.screening_id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">{screening.patient_name}</p>
-                      <p className="text-xs text-gray-500">
-                        {screening.eye_side} eye • {new Date(screening.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`badge ${
-                        screening.referral_priority === 'urgent' ? 'bg-red-100 text-red-700' :
-                        screening.referral_priority === 'priority' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        {screening.referral_priority}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
+          <div className="card lg:col-span-3">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-brand-600" />
+                <h3 className="font-bold text-slate-800 text-sm">Recent Screenings</h3>
+              </div>
+              <button onClick={() => router.push('/patients')}
+                className="text-xs text-brand-600 hover:text-brand-700 font-semibold
+                           flex items-center gap-1 hover:gap-1.5 transition-all">
+                View all <ArrowRight className="w-3 h-3" />
+              </button>
             </div>
+            {recent.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-slate-300">
+                <ScanEye className="w-10 h-10 mb-2" />
+                <p className="text-xs">No screenings yet</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {recent.map(s => {
+                  const p = s.referral_priority ?? 'routine';
+                  const badge = p === 'urgent' ? 'badge-urgent' : p === 'priority' ? 'badge-priority' : 'badge-routine';
+                  return (
+                    <div key={s.screening_id}
+                      onClick={() => router.push(`/screening/${s.screening_id}`)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                 hover:bg-slate-50 transition-colors cursor-pointer group">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-primary-400
+                                      flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {(s.patient_name ?? '?').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">
+                          {s.patient_name ?? '—'}
+                        </p>
+                        <p className="text-xs text-slate-400 capitalize">
+                          {s.eye_side ?? '—'} eye · {fmtDate(s.date)}
+                        </p>
+                      </div>
+                      <span className={badge}>{p}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-300 opacity-0
+                                            group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Performance metrics */}
+        {/* System performance */}
         {stats && (
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              System Performance
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Agreement Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.agreement_rate}%</p>
-                <p className="text-xs text-gray-500 mt-1">Clinician-AI agreement</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Poor Quality Rate</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {((stats.poor_quality_images / stats.total_screenings) * 100).toFixed(1)}%
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Images requiring recapture</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Urgent Referrals</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.urgent_referrals}</p>
-                <p className="text-xs text-gray-500 mt-1">Cases requiring immediate attention</p>
-              </div>
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp className="w-4 h-4 text-brand-600" />
+              <h3 className="font-bold text-slate-800 text-sm">System Performance</h3>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+              {[
+                {
+                  label: 'AI–Clinician Agreement',
+                  val:   `${stats.agreement_rate}%`,
+                  sub:   'Based on reviewed cases',
+                  colour:'bg-emerald-400',
+                  width:  stats.agreement_rate,
+                },
+                {
+                  label: 'Poor Quality Rate',
+                  val:   total > 0 ? `${pct(stats.poor_quality_images, total)}%` : '—',
+                  sub:   'Images needing recapture',
+                  colour:'bg-amber-400',
+                  width:  total > 0 ? pct(stats.poor_quality_images, total) : 0,
+                },
+                {
+                  label: 'Urgent Referrals',
+                  val:   String(stats.urgent_referrals),
+                  sub:   'Require immediate attention',
+                  colour:'bg-red-500',
+                  width:  total > 0 ? pct(stats.urgent_referrals, total) : 0,
+                },
+              ].map(m => (
+                <div key={m.label} className="pt-4 sm:pt-0 sm:px-6 first:pl-0">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">{m.label}</p>
+                  <p className="text-2xl font-black text-slate-900">{m.val}</p>
+                  <div className="progress-track my-2">
+                    <div className={`progress-fill ${m.colour}`} style={{ width: `${m.width}%` }} />
+                  </div>
+                  <p className="text-xs text-slate-400">{m.sub}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
