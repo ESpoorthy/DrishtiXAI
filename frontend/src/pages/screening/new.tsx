@@ -300,13 +300,63 @@ export default function NewScreening() {
                 <div>
                   <p className="font-semibold text-sm">DEMONSTRATION MODE</p>
                   <p className="text-xs mt-0.5 opacity-80">
-                    Synthetic prediction for demo purposes only. Not for clinical use.
+                    Image-based prediction for demo purposes. Not for clinical use.
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Three result cards */}
+            {/* ── Diabetic status hero card ── */}
+            {screening.predicted_severity != null && (() => {
+              const isDiabetic = screening.predicted_severity > 0;
+              const sev  = screening.predicted_severity;
+              const conf = ((screening.prediction_confidence ?? 0) * 100).toFixed(1);
+              return (
+                <div className={`rounded-2xl p-6 border-2 flex flex-col sm:flex-row items-start sm:items-center gap-5
+                  ${isDiabetic
+                    ? sev >= 3 ? 'bg-red-50 border-red-300'
+                               : 'bg-amber-50 border-amber-300'
+                    : 'bg-emerald-50 border-emerald-300'}`}>
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg
+                    ${isDiabetic
+                      ? sev >= 3 ? 'bg-gradient-to-br from-red-600 to-red-400'
+                                 : 'bg-gradient-to-br from-amber-600 to-orange-400'
+                      : 'bg-gradient-to-br from-emerald-600 to-teal-400'}`}>
+                    {isDiabetic
+                      ? <AlertTriangle className="w-8 h-8 text-white" />
+                      : <CheckCircle2  className="w-8 h-8 text-white" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-xl font-black
+                      ${isDiabetic ? sev >= 3 ? 'text-red-800' : 'text-amber-800' : 'text-emerald-800'}`}>
+                      {isDiabetic
+                        ? '⚠ Diabetic Retinopathy Detected'
+                        : '✓ No Diabetic Retinopathy Detected'}
+                    </p>
+                    <p className={`text-sm mt-1 font-medium
+                      ${isDiabetic ? sev >= 3 ? 'text-red-700' : 'text-amber-700' : 'text-emerald-700'}`}>
+                      {SEVERITY_LABELS[sev]} &nbsp;·&nbsp; Confidence: {conf}%
+                    </p>
+                    <p className={`text-xs mt-1
+                      ${isDiabetic ? sev >= 3 ? 'text-red-600' : 'text-amber-600' : 'text-emerald-600'}`}>
+                      {isDiabetic
+                        ? sev >= 3
+                          ? 'Urgent ophthalmologist referral recommended'
+                          : 'Ophthalmologist review recommended'
+                        : 'Routine annual screening recommended'}
+                    </p>
+                  </div>
+                  <span className={`badge flex-shrink-0 text-sm
+                    ${isDiabetic
+                      ? sev >= 3 ? 'badge-urgent'   : 'badge-priority'
+                      : 'badge-routine'}`}>
+                    {(screening.referral_priority ?? 'routine').toUpperCase()}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* Three detail cards */}
             <div className="grid md:grid-cols-3 gap-5">
 
               {/* Quality */}
