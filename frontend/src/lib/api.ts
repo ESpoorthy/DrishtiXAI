@@ -186,20 +186,39 @@ async function submitClinicianReview(
 }
 
 /**
- * Returns the URL used to render a fundus image directly in an <img> tag.
- * The backend serves static uploads under /uploads/<filename>.
+ * Build a URL to serve an uploaded fundus image or Grad-CAM heatmap.
+ *
+ * The backend stores image_path as a relative Windows path like:
+ *   data\uploads\1\uuid.jpg
+ * The static mount is at /uploads/ → ./data/uploads
+ * So we strip "data\uploads\" (or "data/uploads/") and forward-slash the rest.
+ *
+ *   data\uploads\1\uuid.jpg  →  /uploads/1/uuid.jpg
  */
-function getScreeningImageUrl(imageFilename: string): string {
-  return `${API_BASE_URL}/uploads/${imageFilename}`;
+function imagePathToUrl(storedPath: string): string {
+  // Normalise separators → forward slash
+  const normalised = storedPath.replace(/\\/g, '/');
+  // Strip leading "data/uploads/" prefix if present
+  const relative = normalised.replace(/^data\/uploads\/?/, '');
+  return `${API_BASE_URL}/uploads/${relative}`;
+}
+
+/**
+ * Returns the URL for the fundus image using the stored image_path.
+ * Falls back to building from filename if path is not available.
+ */
+function getScreeningImageUrl(imagePath: string): string {
+  return imagePathToUrl(imagePath);
 }
 
 /**
  * Returns the URL for the Grad-CAM explanation heatmap.
+ * Explanation file is stored alongside the original as <stem>_explanation.jpg
  */
-function getExplanationImageUrl(imageFilename: string): string {
-  // Explanation files are named <stem>_explanation.jpg
-  const stem = imageFilename.replace(/\.[^.]+$/, '');
-  return `${API_BASE_URL}/uploads/${stem}_explanation.jpg`;
+function getExplanationImageUrl(imagePath: string): string {
+  const url = imagePathToUrl(imagePath);
+  // Replace the extension with _explanation.jpg
+  return url.replace(/\.[^/.]+$/, '_explanation.jpg');
 }
 
 // ── Dashboard & Analytics ────────────────────────────────────────────────────

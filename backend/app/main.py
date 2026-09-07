@@ -45,6 +45,10 @@ app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs("./logs", exist_ok=True)
 
+# Serve uploaded images as static files at /uploads/
+# This lets the frontend load fundus images and Grad-CAM heatmaps directly
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+
 
 @app.get("/")
 def root():

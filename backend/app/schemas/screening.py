@@ -54,6 +54,7 @@ class ScreeningResponse(BaseModel):
     screening_date: datetime
     performed_by: int
     image_filename: str
+    image_path: Optional[str] = None   # full stored path for URL construction
     
     # Quality
     image_quality: Optional[str] = None

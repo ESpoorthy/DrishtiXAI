@@ -113,9 +113,11 @@ export default function ScreeningDetail() {
     </Layout>
   );
 
-  const imageUrl       = api.getScreeningImageUrl(screening.image_filename);
-  const explanationUrl = screening.has_explanation
-    ? api.getExplanationImageUrl(screening.image_filename)
+  const imageUrl       = screening.image_path
+    ? api.getScreeningImageUrl(screening.image_path)
+    : null;
+  const explanationUrl = screening.has_explanation && screening.image_path
+    ? api.getExplanationImageUrl(screening.image_path)
     : null;
 
   return (
@@ -167,6 +169,49 @@ export default function ScreeningDetail() {
           </div>
         </div>
 
+        {/* ── Diabetic Status Banner ── */}
+        {screening.predicted_severity != null && (
+          (() => {
+            const isDiabetic = screening.predicted_severity > 0;
+            const sev = screening.predicted_severity;
+            const conf = ((screening.prediction_confidence ?? 0) * 100).toFixed(1);
+            return (
+              <div className={`rounded-2xl p-5 border-2 flex items-center gap-5
+                ${isDiabetic
+                  ? sev >= 3
+                    ? 'bg-red-50 border-red-300'
+                    : 'bg-amber-50 border-amber-300'
+                  : 'bg-emerald-50 border-emerald-300'}`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md
+                  ${isDiabetic
+                    ? sev >= 3 ? 'bg-red-500' : 'bg-amber-500'
+                    : 'bg-emerald-500'}`}>
+                  {isDiabetic
+                    ? <AlertTriangle className="w-7 h-7 text-white" />
+                    : <CheckCircle2  className="w-7 h-7 text-white" />}
+                </div>
+                <div className="flex-1">
+                  <p className={`text-lg font-black
+                    ${isDiabetic ? sev >= 3 ? 'text-red-800' : 'text-amber-800' : 'text-emerald-800'}`}>
+                    {isDiabetic
+                      ? 'Diabetic Retinopathy Detected'
+                      : 'No Diabetic Retinopathy Detected'}
+                  </p>
+                  <p className={`text-sm mt-0.5
+                    ${isDiabetic ? sev >= 3 ? 'text-red-600' : 'text-amber-600' : 'text-emerald-600'}`}>
+                    {isDiabetic
+                      ? `${SEVERITY_LABELS[sev]} — Confidence: ${conf}% · Referral: ${(screening.referral_priority ?? 'routine').toUpperCase()}`
+                      : `No signs of DR found — Confidence: ${conf}% · Routine annual check-up recommended`}
+                  </p>
+                </div>
+                {screening.is_demo_mode && (
+                  <span className="badge badge-demo flex-shrink-0">DEMO</span>
+                )}
+              </div>
+            );
+          })()
+        )}
+
         {/* ── Main grid ── */}
         <div className="grid lg:grid-cols-3 gap-6">
 
@@ -186,7 +231,7 @@ export default function ScreeningDetail() {
 
               <div className="rounded-2xl overflow-hidden bg-black border border-slate-200 min-h-[220px]
                               flex items-center justify-center">
-                {imgError ? (
+                {imgError || !imageUrl ? (
                   <div className="flex flex-col items-center gap-2 py-14 text-slate-400">
                     <ImageOff className="w-10 h-10 opacity-40" />
                     <p className="text-xs">Image unavailable</p>

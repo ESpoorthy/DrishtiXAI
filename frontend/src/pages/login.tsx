@@ -98,12 +98,12 @@ export default function Login() {
           </ul>
         </div>
 
-        {/* SIH badge */}
+        {/* Team badge */}
         <div className="relative">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl
                           bg-white/10 border border-white/15 backdrop-blur-sm">
-            <span className="text-white/80 text-xs font-medium">
-              🏆 Smart India Hackathon 2026 · SIH26038 · MathWorks
+            <span className="text-yellow-300 text-xs font-semibold">
+              🏆 Team AetherAI &nbsp;·&nbsp; Smart India Hackathon 2026
             </span>
           </div>
         </div>

@@ -1,28 +1,46 @@
 /**
- * Landing page
+ * Landing page — team AetherAI, Smart India Hackathon 2026
  */
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuthStore } from '@/store/authStore';
 import {
   Eye, Shield, Zap, Users, Globe, Heart,
-  ArrowRight, CheckCircle2, Star,
+  ArrowRight, Trophy, Target, Lightbulb, Star,
 } from 'lucide-react';
 
 const FEATURES = [
-  { icon: Shield, title: 'Explainable AI',        desc: 'Grad-CAM heatmaps show exactly which retinal regions drove every prediction.',       color: 'from-blue-500 to-brand-600' },
-  { icon: Zap,    title: 'Quality Gate',           desc: 'Automatic blur, illumination & contrast checks before any AI prediction runs.',       color: 'from-amber-500 to-orange-500' },
-  { icon: Users,  title: 'Rural-Friendly',         desc: 'Mobile-first, low-bandwidth design built for community health workers.',               color: 'from-emerald-500 to-teal-500' },
-  { icon: Globe,  title: 'Multilingual-Ready',     desc: 'Architecture supports Hindi, Tamil, Telugu and other Indian languages.',              color: 'from-purple-500 to-pink-500' },
-  { icon: Heart,  title: 'Clinical Decision Support', desc: 'Referral prioritisation engine combines severity, confidence and patient risk.',   color: 'from-red-500 to-rose-500' },
-  { icon: Eye,    title: 'Human-in-the-Loop',      desc: 'Clinicians can review, override and annotate every AI decision with audit trail.',    color: 'from-cyan-500 to-blue-500' },
+  { icon: Shield, title: 'Explainable AI',          desc: 'Grad-CAM heatmaps show exactly which retinal regions drove every prediction.',     color: 'from-blue-500 to-brand-600' },
+  { icon: Zap,    title: 'Quality Gate',             desc: 'Automatic blur, illumination & contrast checks before any AI prediction runs.',     color: 'from-amber-500 to-orange-500' },
+  { icon: Users,  title: 'Rural-Friendly',           desc: 'Mobile-first, low-bandwidth design built for community health workers.',             color: 'from-emerald-500 to-teal-500' },
+  { icon: Globe,  title: 'Multilingual-Ready',       desc: 'Architecture supports Hindi, Tamil, Telugu and other Indian languages.',            color: 'from-purple-500 to-pink-500' },
+  { icon: Heart,  title: 'Clinical Decision Support',desc: 'Referral prioritisation engine combines severity, confidence and patient risk.',     color: 'from-red-500 to-rose-500' },
+  { icon: Eye,    title: 'Human-in-the-Loop',        desc: 'Clinicians can review, override and annotate every AI decision with audit trail.',  color: 'from-cyan-500 to-blue-500' },
 ];
 
 const STATS = [
-  { val: '5', label: 'DR Severity Levels' },
-  { val: '20+', label: 'API Endpoints' },
-  { val: '4', label: 'User Role Types' },
+  { val: '5',    label: 'DR Severity Levels' },
+  { val: '20+',  label: 'API Endpoints' },
+  { val: '3',    label: 'User Roles' },
   { val: '100%', label: 'Explainable' },
+];
+
+const WHY_WIN = [
+  {
+    icon: Trophy,
+    title: 'Complete End-to-End Solution',
+    desc: 'Not just a model — a full production-ready healthcare platform covering every step from image upload to clinical referral.',
+  },
+  {
+    icon: Lightbulb,
+    title: 'Trust-First Approach',
+    desc: 'Every prediction comes with visual explanations, confidence scores and uncertainty handling — AI that doctors can actually trust.',
+  },
+  {
+    icon: Target,
+    title: 'Designed for Real Deployment',
+    desc: 'Built for rural India with mobile-first design, offline capability, low-bandwidth support and multilingual architecture.',
+  },
 ];
 
 export default function Home() {
@@ -39,12 +57,14 @@ export default function Home() {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-primary-500
                             flex items-center justify-center shadow-md">
-              <Eye className="w-4.5 h-4.5 text-white" />
+              <Eye className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-slate-900">DrishtiXAI</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:flex badge badge-demo">SIH26038 · MathWorks</span>
+            <span className="hidden sm:flex items-center gap-1.5 badge badge-demo">
+              <Trophy className="w-3 h-3" /> Team AetherAI
+            </span>
             <button onClick={() => router.push('/login')} className="btn-primary btn-sm">
               Sign In <ArrowRight className="w-3.5 h-3.5" />
             </button>
@@ -54,11 +74,10 @@ export default function Home() {
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden bg-gradient-hero text-white">
-        {/* bg decoration */}
+        {/* Background decoration */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-brand-800/40 blur-3xl" />
           <div className="absolute bottom-0 -left-20 w-80 h-80 rounded-full bg-primary-900/40 blur-3xl" />
-          {/* grid */}
           <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -71,14 +90,16 @@ export default function Home() {
 
         <div className="relative max-w-7xl mx-auto px-6 py-24 lg:py-32">
           <div className="max-w-3xl mx-auto text-center">
-            {/* badge */}
+
+            {/* Team badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
-                            bg-white/10 border border-white/20 text-sm font-medium text-blue-200 mb-8">
-              <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
-              Smart India Hackathon 2026 · Problem SIH26038
+                            bg-white/10 border border-white/20 text-sm font-semibold
+                            text-yellow-300 mb-8">
+              <Trophy className="w-4 h-4 text-yellow-400" fill="currentColor" />
+              Team AetherAI &nbsp;·&nbsp; Smart India Hackathon 2026
             </div>
 
-            {/* Eye icon */}
+            {/* Logo */}
             <div className="flex justify-center mb-6">
               <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-sm border border-white/20
                               flex items-center justify-center shadow-xl">
@@ -115,11 +136,53 @@ export default function Home() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {STATS.map(s => (
-              <div key={s.label} className="text-center px-4 py-5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-sm">
+              <div key={s.label}
+                className="text-center px-4 py-5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-sm">
                 <p className="text-3xl font-black text-white mb-1">{s.val}</p>
                 <p className="text-blue-200 text-xs font-medium">{s.label}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Why We Will Win ── */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
+                            bg-yellow-50 border border-yellow-200 text-yellow-700
+                            text-sm font-semibold mb-4">
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              Why AetherAI Wins
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mt-3">
+              More Than Just an AI Model
+            </h2>
+            <p className="text-slate-500 mt-3 max-w-xl mx-auto">
+              We solved the technical problem, the deployment problem, the trust problem
+              and the usability problem — all in one platform.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {WHY_WIN.map(w => {
+              const Icon = w.icon;
+              return (
+                <div key={w.title}
+                  className="relative card border-2 border-transparent
+                             hover:border-brand-200 hover:shadow-card-hover
+                             transition-all duration-200 group">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-600 to-primary-500
+                                  flex items-center justify-center mb-5 shadow-md
+                                  group-hover:scale-110 transition-transform duration-200">
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-lg mb-2">{w.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">{w.desc}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -130,7 +193,7 @@ export default function Home() {
           <div className="text-center mb-14">
             <span className="badge badge-info mb-4">Core Capabilities</span>
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mt-3">
-              Built for Trust & Transparency
+              Built for Trust &amp; Transparency
             </h2>
             <p className="text-slate-500 mt-3 max-w-xl mx-auto">
               Every design decision prioritises explainability, safety and ease of use for
@@ -142,7 +205,8 @@ export default function Home() {
             {FEATURES.map(f => {
               const Icon = f.icon;
               return (
-                <div key={f.title} className="card hover:shadow-card-hover transition-all duration-200 group">
+                <div key={f.title}
+                  className="card hover:shadow-card-hover transition-all duration-200 group">
                   <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${f.color}
                                   flex items-center justify-center mb-4 shadow-md
                                   group-hover:scale-110 transition-transform duration-200`}>
@@ -157,7 +221,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Pipeline ── */}
+      {/* ── AI Pipeline ── */}
       <section className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
@@ -166,11 +230,11 @@ export default function Home() {
           </div>
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
             {[
-              { n:'1', title:'Upload', sub:'Fundus image capture', color:'bg-blue-500' },
-              { n:'2', title:'Quality', sub:'Blur / illumination check', color:'bg-amber-500' },
-              { n:'3', title:'Predict', sub:'EfficientNet-B0 × 5 classes', color:'bg-purple-500' },
-              { n:'4', title:'Explain', sub:'Grad-CAM heatmap overlay', color:'bg-emerald-500' },
-              { n:'5', title:'Refer', sub:'Priority + risk stratification', color:'bg-red-500' },
+              { n:'1', title:'Upload',  sub:'Fundus image capture',       color:'bg-blue-500' },
+              { n:'2', title:'Quality', sub:'Blur / illumination check',  color:'bg-amber-500' },
+              { n:'3', title:'Predict', sub:'EfficientNet × 5 classes',   color:'bg-purple-500' },
+              { n:'4', title:'Explain', sub:'Grad-CAM heatmap overlay',   color:'bg-emerald-500' },
+              { n:'5', title:'Refer',   sub:'Priority + risk stratification', color:'bg-red-500' },
             ].map((s, i, arr) => (
               <div key={s.n} className="flex lg:flex-col items-center gap-3 lg:gap-2 flex-1">
                 <div className={`w-12 h-12 rounded-2xl ${s.color} flex items-center justify-center
@@ -191,12 +255,21 @@ export default function Home() {
         </div>
       </section>
 
+
+
       {/* ── CTA ── */}
       <section className="py-20 bg-gradient-hero text-white">
         <div className="max-w-2xl mx-auto text-center px-6">
-          <h2 className="text-3xl font-bold mb-4">Ready to explore the prototype?</h2>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
+                          bg-white/10 border border-white/20 text-yellow-300
+                          text-sm font-semibold mb-6">
+            <Trophy className="w-4 h-4 text-yellow-400" fill="currentColor" />
+            Smart India Hackathon 2026
+          </div>
+          <h2 className="text-3xl font-bold mb-4">Ready to see it in action?</h2>
           <p className="text-blue-200 mb-8">
-            Sign in with demo credentials and run a complete DR screening workflow in minutes.
+            Sign in and run a complete DR screening workflow — from image upload to
+            referral recommendation — in under a minute.
           </p>
           <button onClick={() => router.push('/login')}
             className="btn btn-lg bg-white text-brand-700 hover:bg-blue-50 font-bold shadow-xl">
@@ -210,12 +283,16 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer className="bg-[#0f172a] text-slate-500 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center
+                        justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-slate-600" />
             <span className="text-slate-400 font-medium">DrishtiXAI</span>
           </div>
-          <span>Smart India Hackathon 2026 · SIH26038 · MathWorks</span>
+          <div className="flex items-center gap-2 text-slate-500">
+            <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+            <span>Team AetherAI &nbsp;·&nbsp; Smart India Hackathon 2026</span>
+          </div>
           <span className="text-red-500 font-semibold">NOT FOR CLINICAL USE</span>
         </div>
       </footer>

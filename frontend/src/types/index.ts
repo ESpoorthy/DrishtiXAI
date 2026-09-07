@@ -100,6 +100,7 @@ export interface Screening {
   screening_date: string;
   performed_by: number;
   image_filename: string;
+  image_path?: string;           // stored path e.g. data\uploads\1\uuid.jpg
   image_quality?: ImageQuality;
   quality_score?: number;
   quality_issues?: string;
