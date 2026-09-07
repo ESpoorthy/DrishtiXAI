@@ -585,5 +585,3 @@ This system is a **research prototype** and has not been:
 | [@Shamithri Gowravarapu](https://github.com/shami2398) | Shamithri Gowravarapu | Team Leader |
 
 **Built with ❤️ for Smart India Hackathon 2026**
-
-===
