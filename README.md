@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # DrishtiXAI
 
 **Explainable AI for Diabetic Retinopathy Screening in Rural India**
@@ -7,7 +6,7 @@
 [![Problem Statement](https://img.shields.io/badge/PS-SIH26038-green)](https://sih.gov.in)
 [![Organization](https://img.shields.io/badge/Org-MathWorks-orange)](https://mathworks.com)
 
-## ⚠️ IMPORTANT DISCLAIMER
+## IMPORTANT DISCLAIMER
 
 **THIS IS A RESEARCH PROTOTYPE FOR DEMONSTRATION AND EVALUATION PURPOSES ONLY.**
 
@@ -19,7 +18,7 @@
 
 ---
 
-## 🎯 Problem Statement
+## Problem Statement
 
 **SIH26038**: Explainable AI for Diabetic Retinopathy Screening in Rural India
 
@@ -39,7 +38,7 @@ Design an explainable, trustworthy, rural-friendly diabetic retinopathy screenin
 
 ---
 
-## 🌟 Solution Overview
+##  Solution Overview
 
 **DrishtiXAI** is a comprehensive AI-powered screening and decision support system designed specifically for rural Indian healthcare environments. It combines state-of-the-art deep learning with explainable AI techniques to provide trustworthy, actionable insights for diabetic retinopathy screening.
 
@@ -54,7 +53,7 @@ Design an explainable, trustworthy, rural-friendly diabetic retinopathy screenin
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -92,7 +91,7 @@ Design an explainable, trustworthy, rural-friendly diabetic retinopathy screenin
 
 ---
 
-## 🔬 AI Pipeline
+##  AI Pipeline
 
 ### Complete Screening Workflow
 
@@ -138,7 +137,7 @@ Following standard clinical classification:
 
 ---
 
-## ✨ Features
+##  Features
 
 ### For Community Health Workers
 
@@ -179,7 +178,7 @@ Following standard clinical classification:
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -258,7 +257,7 @@ Frontend will be available at: `http://localhost:3000`
 
 ### Default Login Credentials
 
-**⚠️ CHANGE IN PRODUCTION!**
+** CHANGE IN PRODUCTION!**
 
 - **Username**: `admin`
 - **Password**: `change-me-in-production`
@@ -299,7 +298,7 @@ The system will show:
 
 ---
 
-## 🧪 Demo Mode
+##  Demo Mode
 
 **Current Status: DEMO MODE ENABLED**
 
@@ -337,7 +336,7 @@ Demo mode allows evaluation of:
 
 ---
 
-## 🔒 Security & Privacy
+##  Security & Privacy
 
 ### Implemented
 
@@ -360,7 +359,7 @@ Demo mode allows evaluation of:
 
 ---
 
-## 📊 Model Card
+##  Model Card
 
 ### Model Information
 
@@ -394,7 +393,7 @@ Demo mode allows evaluation of:
 
 ---
 
-## 🏥 Clinical Workflow Integration
+##  Clinical Workflow Integration
 
 ### Recommended Deployment Model
 
@@ -421,7 +420,7 @@ Regular Follow-up  Immediate Referral
 
 ---
 
-## 🛠️ Development
+##  Development
 
 ### Project Structure
 
@@ -478,7 +477,7 @@ Diabetic-Retinopathy-screening-platform/
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Backend Tests
 
@@ -509,7 +508,7 @@ npm test
 
 ---
 
-## 📈 Future Enhancements
+##  Future Enhancements
 
 ### Near Term
 
@@ -530,27 +529,13 @@ npm test
 
 ---
 
-## 📄 License
+## License
 
 This project is developed for Smart India Hackathon 2026.
 
 ---
 
-## 👥 Team
-
-**Team Name**: [Your Team Name]
-
-**Members**:
-- [Member 1] - [Role]
-- [Member 2] - [Role]
-- [Member 3] - [Role]
-- [Member 4] - [Role]
-- [Member 5] - [Role]
-- [Member 6] - [Role]
-
----
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **MathWorks** for the problem statement
 - **Smart India Hackathon 2026** for the opportunity
@@ -559,15 +544,15 @@ This project is developed for Smart India Hackathon 2026.
 
 ---
 
-## 📞 Contact
+##  Contact
 
 For questions or support:
-- Email: [your-email@example.com]
-- GitHub: [repository-url]
+- Email: saispoorthyeturu6@gmail.com
+- GitHub: (https://github.com/shami2398/Diabetic-Retinopathy-screening-platform.git)
 
 ---
 
-## ⚖️ Regulatory & Compliance Note
+##  Regulatory & Compliance Note
 
 This system is a **research prototype** and has not been:
 - Validated in clinical trials
@@ -586,11 +571,9 @@ This system is a **research prototype** and has not been:
 
 ---
 
-**Built with ❤️ for Smart India Hackathon 2026**
-=======
-## 👥 ## Team
+## About the Team
 
-**Team: AetherAi**
+**Team Name: AetherAi**
 
 | GitHub Handle | Name | Role |
 |---|---|---|
@@ -599,5 +582,8 @@ This system is a **research prototype** and has not been:
 | [@Duddalasrija](https://github.com/Duddalasrija) | Duddala Srija | Collaborator |
 | [@glory-pranavi](https://github.com/glory-pranavi) | Glory Pranavi B | Collaborator |
 | [@Katakam Sahithi Rithvika](https://github.com/sahithirithvika) | Katakam Sahithi Rithvika | Collaborator |
-| [@Shamithri Gowravarapu](https://github.com/shami2398) | Shamithri Gowravarapu | Repository Owner |
->>>>>>> d0088b3d7c08737eb8c1770e8484721e21c569c9
+| [@Shamithri Gowravarapu](https://github.com/shami2398) | Shamithri Gowravarapu | Team Leader |
+
+**Built with ❤️ for Smart India Hackathon 2026**
+
+===
