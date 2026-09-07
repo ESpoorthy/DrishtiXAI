@@ -191,7 +191,7 @@ Following standard clinical classification:
 #### 1. Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/shami2398/Diabetic-Retinopathy-screening-platform.git
 cd Diabetic-Retinopathy-screening-platform
 ```
 
