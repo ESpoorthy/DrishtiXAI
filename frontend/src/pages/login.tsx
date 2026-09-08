@@ -1,5 +1,5 @@
-/**
- * Login page — split panel
+﻿/**
+ * Login page â€” split panel
  */
 import { useState } from 'react';
 import { useRouter } from 'next/router';
@@ -38,7 +38,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
 
-      {/* ── Left hero panel ── */}
+      {/* â”€â”€ Left hero panel â”€â”€ */}
       <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden
                       bg-gradient-hero flex-col justify-between p-12">
         {/* decorations */}
@@ -103,13 +103,13 @@ export default function Login() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl
                           bg-white/10 border border-white/15 backdrop-blur-sm">
             <span className="text-yellow-300 text-xs font-semibold">
-              🏆 Team AetherAI &nbsp;·&nbsp; Smart India Hackathon 2026
+              ðŸ† Team AetherAI &nbsp;Â·&nbsp; Smart India Hackathon 2026
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── Right form panel ── */}
+      {/* â”€â”€ Right form panel â”€â”€ */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-slate-50">
         <div className="w-full max-w-md animate-fade-up">
 
@@ -168,7 +168,7 @@ export default function Login() {
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 rounded-full border-2 border-white/30
                                    border-t-white animate-spin" />
-                  Signing in…
+                  Signing inâ€¦
                 </span>
               ) : 'Sign In'}
             </button>
@@ -189,13 +189,13 @@ export default function Login() {
               </div>
               <div className="bg-slate-50 rounded-xl px-3 py-2">
                 <p className="text-xs text-slate-400 mb-0.5">Password</p>
-                <p className="font-mono font-semibold text-slate-800 text-xs">change-me-in-production</p>
+                <p className="font-mono font-semibold text-slate-800 text-xs">admin123</p>
               </div>
             </div>
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-400">
-            ⚠ Research prototype · Not for clinical use
+            âš  Research prototype Â· Not for clinical use
           </p>
         </div>
       </div>
