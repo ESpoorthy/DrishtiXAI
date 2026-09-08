@@ -191,8 +191,8 @@ Following standard clinical classification:
 #### 1. Clone Repository
 
 ```bash
-git clone https://github.com/shami2398/Diabetic-Retinopathy-screening-platform.git
-cd Diabetic-Retinopathy-screening-platform
+git clone https://github.com/shami2398/DrishtiXAI.git
+cd DrishtiXAI
 ```
 
 #### 2. Setup Backend
@@ -548,7 +548,7 @@ This project is developed for Smart India Hackathon 2026.
 
 For questions or support:
 - Email: saispoorthyeturu6@gmail.com
-- GitHub: (https://github.com/shami2398/Diabetic-Retinopathy-screening-platform.git)
+- GitHub: clone https://github.com/shami2398/DrishtiXAI.git
 
 ---
 
