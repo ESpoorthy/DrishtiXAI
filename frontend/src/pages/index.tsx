@@ -1,12 +1,12 @@
-/**
- * Landing page — team AetherAI, Smart India Hackathon 2026
+﻿/**
+ * Landing page â€” team AetherAI, Smart India Hackathon 2026
  */
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuthStore } from '@/store/authStore';
 import {
   Eye, Shield, Zap, Users, Globe, Heart,
-  ArrowRight, Trophy, Target, Lightbulb, Star,
+  ArrowRight, Trophy, Target, Lightbulb,
 } from 'lucide-react';
 
 const FEATURES = [
@@ -29,12 +29,12 @@ const WHY_WIN = [
   {
     icon: Trophy,
     title: 'Complete End-to-End Solution',
-    desc: 'Not just a model — a full production-ready healthcare platform covering every step from image upload to clinical referral.',
+    desc: 'Not just a model â€” a full production-ready healthcare platform covering every step from image upload to clinical referral.',
   },
   {
     icon: Lightbulb,
     title: 'Trust-First Approach',
-    desc: 'Every prediction comes with visual explanations, confidence scores and uncertainty handling — AI that doctors can actually trust.',
+    desc: 'Every prediction comes with visual explanations, confidence scores and uncertainty handling â€” AI that doctors can actually trust.',
   },
   {
     icon: Target,
@@ -51,7 +51,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* ── Navbar ── */}
+      {/* â”€â”€ Navbar â”€â”€ */}
       <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -72,7 +72,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Hero ── */}
+      {/* â”€â”€ Hero â”€â”€ */}
       <section className="relative overflow-hidden bg-gradient-hero text-white">
         {/* Background decoration */}
         <div className="absolute inset-0 pointer-events-none">
@@ -96,7 +96,7 @@ export default function Home() {
                             bg-white/10 border border-white/20 text-sm font-semibold
                             text-yellow-300 mb-8">
               <Trophy className="w-4 h-4 text-yellow-400" fill="currentColor" />
-              Team AetherAI &nbsp;·&nbsp; Smart India Hackathon 2026
+              Team AetherAI &nbsp;Â·&nbsp; Smart India Hackathon 2026
             </div>
 
             {/* Logo */}
@@ -116,7 +116,7 @@ export default function Home() {
             </p>
             <p className="text-blue-200/80 text-base max-w-xl mx-auto mb-10 leading-relaxed">
               A trustworthy, rural-friendly screening platform with Grad-CAM visual explanations,
-              automatic quality gates and clinical decision support — built for rural India.
+              automatic quality gates and clinical decision support â€” built for rural India.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -146,7 +146,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Why We Will Win ── */}
+      {/* â”€â”€ Why We Will Win â”€â”€ */}
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-14">
@@ -161,7 +161,7 @@ export default function Home() {
             </h2>
             <p className="text-slate-500 mt-3 max-w-xl mx-auto">
               We solved the technical problem, the deployment problem, the trust problem
-              and the usability problem — all in one platform.
+              and the usability problem â€” all in one platform.
             </p>
           </div>
 
@@ -187,7 +187,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Features ── */}
+      {/* â”€â”€ Features â”€â”€ */}
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-14">
@@ -221,7 +221,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── AI Pipeline ── */}
+      {/* â”€â”€ AI Pipeline â”€â”€ */}
       <section className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
@@ -232,7 +232,7 @@ export default function Home() {
             {[
               { n:'1', title:'Upload',  sub:'Fundus image capture',       color:'bg-blue-500' },
               { n:'2', title:'Quality', sub:'Blur / illumination check',  color:'bg-amber-500' },
-              { n:'3', title:'Predict', sub:'EfficientNet × 5 classes',   color:'bg-purple-500' },
+              { n:'3', title:'Predict', sub:'EfficientNet Ã— 5 classes',   color:'bg-purple-500' },
               { n:'4', title:'Explain', sub:'Grad-CAM heatmap overlay',   color:'bg-emerald-500' },
               { n:'5', title:'Refer',   sub:'Priority + risk stratification', color:'bg-red-500' },
             ].map((s, i, arr) => (
@@ -257,7 +257,7 @@ export default function Home() {
 
 
 
-      {/* ── CTA ── */}
+      {/* â”€â”€ CTA â”€â”€ */}
       <section className="py-20 bg-gradient-hero text-white">
         <div className="max-w-2xl mx-auto text-center px-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
@@ -268,20 +268,20 @@ export default function Home() {
           </div>
           <h2 className="text-3xl font-bold mb-4">Ready to see it in action?</h2>
           <p className="text-blue-200 mb-8">
-            Sign in and run a complete DR screening workflow — from image upload to
-            referral recommendation — in under a minute.
+            Sign in and run a complete DR screening workflow â€” from image upload to
+            referral recommendation â€” in under a minute.
           </p>
           <button onClick={() => router.push('/login')}
             className="btn btn-lg bg-white text-brand-700 hover:bg-blue-50 font-bold shadow-xl">
             Launch Demo <ArrowRight className="w-5 h-5" />
           </button>
           <p className="text-blue-300/70 text-xs mt-6">
-            ⚠ Research prototype · Not validated for clinical use
+            âš  Research prototype Â· Not validated for clinical use
           </p>
         </div>
       </section>
 
-      {/* ── Footer ── */}
+      {/* â”€â”€ Footer â”€â”€ */}
       <footer className="bg-[#0f172a] text-slate-500 py-8">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center
                         justify-between gap-3 text-xs">
@@ -291,7 +291,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 text-slate-500">
             <Trophy className="w-3.5 h-3.5 text-yellow-500" />
-            <span>Team AetherAI &nbsp;·&nbsp; Smart India Hackathon 2026</span>
+            <span>Team AetherAI &nbsp;Â·&nbsp; Smart India Hackathon 2026</span>
           </div>
           <span className="text-red-500 font-semibold">NOT FOR CLINICAL USE</span>
         </div>

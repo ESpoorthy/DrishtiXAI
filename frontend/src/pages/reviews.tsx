@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Clinical Reviews — high-priority case queue
  */
 import { useEffect, useState } from 'react';
@@ -7,7 +7,7 @@ import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { SEVERITY_LABELS } from '@/types';
 import {
-  AlertTriangle, Clock, ArrowRight, ClipboardCheck,
+  AlertTriangle, Clock, ArrowRight,
   Loader2, CheckCircle2, ScanEye,
 } from 'lucide-react';
 

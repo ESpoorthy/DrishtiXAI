@@ -43,7 +43,7 @@ class TestAuthentication:
         """Test login succeeds with admin credentials"""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "change-me-in-production"}
+            json={"username": "admin", "password": "admin123"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -65,7 +65,7 @@ class TestPatientEndpoints:
         """Get auth token for protected endpoints"""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "change-me-in-production"}
+            json={"username": "admin", "password": "admin123"}
         )
         token = response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
@@ -102,7 +102,7 @@ class TestDashboard:
         """Get auth token"""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "change-me-in-production"}
+            json={"username": "admin", "password": "admin123"}
         )
         token = response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}

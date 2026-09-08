@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Layout — dark sidebar + top bar
  */
 import { ReactNode, useState } from 'react';

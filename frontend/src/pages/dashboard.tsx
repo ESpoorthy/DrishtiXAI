@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dashboard
  */
 import { useEffect, useState } from 'react';
@@ -7,7 +7,7 @@ import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { DashboardStatistics } from '@/types';
 import {
-  ScanEye, Users, AlertTriangle, Clock,
+  ScanEye, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, ArrowRight, Eye,
   Activity, BarChart2,
 } from 'lucide-react';
