@@ -1,32 +1,33 @@
 /**
  * Patients list
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { Patient } from '@/types';
+import { ErrorBanner } from '@/components/ui/ErrorState';
+import { fmtDateShort } from '@/lib/utils';
 import { Users, Plus, Search, ScanEye, Calendar, MapPin, Loader2 } from 'lucide-react';
 
-function fmtDate(d?: string | null) {
-  if (!d) return '—';
-  try { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }); }
-  catch { return '—'; }
-}
+// Local alias for backwards compat
+const fmtDate = fmtDateShort;
 
 export default function PatientsPage() {
   const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState('');
   const [query,    setQuery]    = useState('');
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
     try { setPatients(await api.getPatients()); }
-    catch (e) { console.error(e); }
+    catch { setError('Failed to load patients. Please try again.'); }
     finally { setLoading(false); }
-  };
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = patients.filter(p =>
     p.full_name.toLowerCase().includes(query.toLowerCase()) ||
@@ -50,6 +51,9 @@ export default function PatientsPage() {
             <Plus className="w-4 h-4" /> Register Patient
           </button>
         </div>
+
+        {/* Error */}
+        {error && <ErrorBanner message={error} onRetry={load} />}
 
         {/* Search bar */}
         <div className="card py-4">

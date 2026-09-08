@@ -1,85 +1,80 @@
 /**
- * Patient detail page
+ * Patient detail page — personal info, medical history, screening history
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { Patient, Screening, SEVERITY_LABELS } from '@/types';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ErrorState } from '@/components/ui/ErrorState';
+import {
+  fmtDate, fmtDateTime, priorityBadge, severityClass,
+} from '@/lib/utils';
 import {
   User, Phone, MapPin, Heart, Calendar, ScanEye,
-  ChevronLeft, AlertCircle, Loader2, ArrowRight, Activity,
+  ChevronLeft, ArrowRight, Activity, Eye, Clock,
+  FileText,
 } from 'lucide-react';
 
-function fmtDate(d?: string | null) {
-  if (!d) return '—';
-  try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); }
-  catch { return '—'; }
-}
-
-function priorityBadge(p?: string | null) {
-  if (p === 'urgent')   return 'badge badge-urgent';
-  if (p === 'priority') return 'badge badge-priority';
-  return 'badge badge-routine';
-}
-
 export default function PatientDetail() {
-  const router = useRouter();
-  const { id } = router.query;
+  const router  = useRouter();
+  const { id }  = router.query;
 
   const [patient,    setPatient]    = useState<Patient | null>(null);
   const [screenings, setScreenings] = useState<Screening[]>([]);
   const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState('');
 
   useEffect(() => {
     if (id) load(parseInt(id as string));
   }, [id]);
 
   const load = async (pid: number) => {
+    setLoading(true);
+    setError('');
     try {
-      const p = await api.getPatient(pid);
+      const [p, s] = await Promise.all([
+        api.getPatient(pid),
+        api.getPatientScreenings(pid),
+      ]);
       setPatient(p);
-      // Load screenings for this patient
-      try {
-        const all = await api.getPatients(); // we use screening list via patient context
-        // Fetch recent screenings from dashboard endpoint as fallback
-      } catch { /* screenings optional */ }
-    } catch (e) {
-      console.error(e);
+      setScreenings(s);
+    } catch {
+      setError('Failed to load patient details.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return (
-    <Layout>
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
-      </div>
-    </Layout>
-  );
+  if (loading) return <LoadingSpinner fullPage message="Loading patient…" />;
 
-  if (!patient) return (
-    <Layout>
-      <div className="card flex flex-col items-center justify-center py-20 text-slate-400">
-        <AlertCircle className="w-12 h-12 mb-3 opacity-40" />
-        <p className="font-semibold">Patient not found</p>
-      </div>
-    </Layout>
-  );
+  if (error || !patient) {
+    return (
+      <ErrorState
+        fullPage
+        title="Patient not found"
+        message={error || 'This patient could not be loaded.'}
+        onRetry={() => id && load(parseInt(id as string))}
+      />
+    );
+  }
 
   const INFO_ROWS = [
     { icon: User,     label: 'Age & Gender', val: `${patient.age} years · ${patient.gender}` },
     { icon: Phone,    label: 'Phone',        val: patient.phone ?? '—' },
-    { icon: MapPin,   label: 'Location',     val: [patient.village_name, patient.district, patient.state].filter(Boolean).join(', ') || '—' },
-    { icon: Calendar, label: 'Registered',   val: fmtDate(patient.created_at) },
+    {
+      icon: MapPin, label: 'Location',
+      val: [patient.village_name, patient.district, patient.state].filter(Boolean).join(', ') || '—',
+    },
+    { icon: Calendar, label: 'Registered', val: fmtDate(patient.created_at) },
   ];
 
   const MEDICAL_ROWS = [
-    { label: 'Has Diabetes',       val: patient.has_diabetes ?? '—' },
-    { label: 'Diabetes Duration',  val: patient.diabetes_duration_years ? `${patient.diabetes_duration_years} years` : '—' },
-    { label: 'Has Hypertension',   val: patient.has_hypertension ?? '—' },
-    { label: 'Previous Eye Exam',  val: patient.previous_eye_exam ?? '—' },
+    { label: 'Has Diabetes',      val: patient.has_diabetes      ?? '—' },
+    { label: 'Diabetes Duration', val: patient.diabetes_duration_years ? `${patient.diabetes_duration_years} years` : '—' },
+    { label: 'Has Hypertension',  val: patient.has_hypertension  ?? '—' },
+    { label: 'Previous Eye Exam', val: patient.previous_eye_exam ?? '—' },
   ];
 
   return (
@@ -87,13 +82,14 @@ export default function PatientDetail() {
       <div className="max-w-4xl mx-auto space-y-6 animate-fade-up">
 
         {/* Back */}
-        <button onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700
-                     text-xs font-medium transition-colors">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700 text-xs font-medium transition-colors"
+        >
           <ChevronLeft className="w-4 h-4" /> Back to Patients
         </button>
 
-        {/* Header card */}
+        {/* Header */}
         <div className="card">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -103,19 +99,26 @@ export default function PatientDetail() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">{patient.full_name}</h1>
-                <span className="badge badge-info font-mono text-[11px] mt-1">
-                  {patient.patient_id}
-                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="badge badge-info font-mono text-[11px]">{patient.patient_id}</span>
+                  {screenings.length > 0 && (
+                    <span className="badge badge-neutral text-[11px]">
+                      {screenings.length} screening{screenings.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <button
               onClick={() => router.push(`/screening/new?patientId=${patient.id}`)}
-              className="btn-primary">
+              className="btn-primary"
+            >
               <ScanEye className="w-4 h-4" /> New Screening
             </button>
           </div>
         </div>
 
+        {/* Info + Medical */}
         <div className="grid md:grid-cols-2 gap-6">
 
           {/* Personal info */}
@@ -150,19 +153,97 @@ export default function PatientDetail() {
             <div className="grid grid-cols-2 gap-3">
               {MEDICAL_ROWS.map(r => (
                 <div key={r.label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-1">
-                    {r.label}
-                  </p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-1">{r.label}</p>
                   <p className={`text-sm font-semibold capitalize
-                    ${r.val === 'yes' ? 'text-red-600'
-                    : r.val === 'no'  ? 'text-emerald-600'
-                    : 'text-slate-600'}`}>
+                    ${r.val === 'yes' ? 'text-red-600' : r.val === 'no' ? 'text-emerald-600' : 'text-slate-600'}`}>
                     {r.val}
                   </p>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+
+        {/* ── Screening History ── */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-brand-500" />
+              Screening History
+              {screenings.length > 0 && (
+                <span className="badge badge-neutral">{screenings.length}</span>
+              )}
+            </h3>
+            <button
+              onClick={() => router.push(`/screening/new?patientId=${patient.id}`)}
+              className="btn-primary btn-sm"
+            >
+              <ScanEye className="w-3.5 h-3.5" /> New Screening
+            </button>
+          </div>
+
+          {screenings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <Eye className="w-10 h-10 mb-3 opacity-30" />
+              <p className="text-sm font-medium">No screenings yet</p>
+              <p className="text-xs mt-1">Start the first screening for this patient</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {screenings.map(s => {
+                const isDiabetic = (s.predicted_severity ?? 0) > 0;
+                const sev = s.predicted_severity;
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => router.push(`/screening/${s.id}`)}
+                    className="flex items-center gap-4 px-4 py-3 rounded-xl
+                               hover:bg-slate-50 transition-colors cursor-pointer
+                               border border-transparent hover:border-slate-200 group"
+                  >
+                    {/* Indicator dot */}
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0
+                      ${s.status === 'clinician_reviewed' ? 'bg-emerald-400'
+                      : s.status === 'analyzed'           ? 'bg-brand-400'
+                      : s.status === 'quality_check_failed' ? 'bg-red-400'
+                      : 'bg-slate-300'}`}
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-800 capitalize">
+                          {s.eye_side} eye
+                        </p>
+                        {sev != null && (
+                          <span className={`badge text-[11px] ${isDiabetic ? (sev >= 3 ? 'badge-urgent' : 'badge-priority') : 'badge-routine'}`}>
+                            {isDiabetic ? SEVERITY_LABELS[sev] : 'No DR'}
+                          </span>
+                        )}
+                        {s.is_demo_mode && <span className="badge badge-demo text-[10px]">DEMO</span>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {fmtDateTime(s.screening_date)}
+                        </span>
+                        <span className="capitalize">{s.status.replace(/_/g, ' ')}</span>
+                        {s.prediction_confidence != null && (
+                          <span>{(s.prediction_confidence * 100).toFixed(0)}% confidence</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={priorityBadge(s.referral_priority)}>
+                        {(s.referral_priority ?? 'routine').toUpperCase()}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* CTA */}
@@ -176,12 +257,14 @@ export default function PatientDetail() {
             </div>
             <button
               onClick={() => router.push(`/screening/new?patientId=${patient.id}`)}
-              className="btn flex-shrink-0 bg-white text-brand-700 hover:bg-blue-50 shadow-lg font-bold">
+              className="btn flex-shrink-0 bg-white text-brand-700 hover:bg-blue-50 shadow-lg font-bold"
+            >
               <ScanEye className="w-4 h-4" /> Start Screening
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
+
       </div>
     </Layout>
   );

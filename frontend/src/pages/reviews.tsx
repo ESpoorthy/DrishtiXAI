@@ -1,40 +1,32 @@
 ﻿/**
  * Clinical Reviews — high-priority case queue
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { SEVERITY_LABELS } from '@/types';
+import { ErrorBanner } from '@/components/ui/ErrorState';
+import { fmtDateShort, priorityBadge } from '@/lib/utils';
 import {
   AlertTriangle, Clock, ArrowRight,
   Loader2, CheckCircle2, ScanEye,
 } from 'lucide-react';
 
-function fmtDate(d?: string | null) {
-  if (!d) return '—';
-  try { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short' }); }
-  catch { return '—'; }
-}
-
-function priorityBadge(p?: string) {
-  if (p === 'urgent')   return 'badge badge-urgent';
-  if (p === 'priority') return 'badge badge-priority';
-  return 'badge badge-routine';
-}
-
 export default function ReviewsPage() {
   const router = useRouter();
   const [cases,   setCases]   = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
     try { setCases(await api.getHighPriorityCases()); }
-    catch (e) { console.error(e); }
+    catch { setError('Failed to load review cases. Please try again.'); }
     finally { setLoading(false); }
-  };
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const urgentCount   = cases.filter(c => c.referral_priority === 'urgent').length;
   const priorityCount = cases.filter(c => c.referral_priority === 'priority').length;
@@ -68,6 +60,9 @@ export default function ReviewsPage() {
             </div>
           )}
         </div>
+
+        {/* Error */}
+        {error && <ErrorBanner message={error} onRetry={load} />}
 
         {/* Content */}
         {loading ? (
@@ -140,7 +135,7 @@ export default function ReviewsPage() {
 
                         <div className="flex items-center gap-3 mt-2.5 text-xs text-slate-400">
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {fmtDate(c.date)}
+                            <Clock className="w-3 h-3" /> {fmtDateShort(c.date)}
                           </span>
                           {c.reason && (
                             <span className="flex items-center gap-1">

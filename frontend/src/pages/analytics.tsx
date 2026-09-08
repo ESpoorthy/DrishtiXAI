@@ -1,30 +1,30 @@
 /**
  * Analytics — model performance & operational metrics
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
+import { ErrorBanner } from '@/components/ui/ErrorState';
+import { pct } from '@/lib/utils';
 import {
   TrendingUp, Activity, Target, AlertCircle,
   ThumbsUp, ThumbsDown, BarChart3, Loader2,
   CheckCircle2, Image as ImageIcon,
 } from 'lucide-react';
 
-function pct(n: number, total: number) {
-  return total > 0 ? Math.round((n / total) * 100) : 0;
-}
-
 export default function AnalyticsPage() {
   const [data,    setData]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
     try { setData(await api.getModelPerformance()); }
-    catch (e) { console.error(e); }
+    catch { setError('Failed to load analytics. Please try again.'); }
     finally { setLoading(false); }
-  };
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   if (loading) return (
     <Layout>
@@ -60,6 +60,9 @@ export default function AnalyticsPage() {
           <h1 className="page-title">Analytics & Performance</h1>
           <p className="page-sub">AI model operational metrics</p>
         </div>
+
+        {/* Error */}
+        {error && <ErrorBanner message={error} onRetry={load} />}
 
         {/* Demo notice */}
         {data?.note && (

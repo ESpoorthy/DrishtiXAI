@@ -19,30 +19,23 @@ import {
   User,
 } from '@/types';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
+// ── Constants ────────────────────────────────────────────────────────────────
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 const TOKEN_KEY = 'drishti_access_token';
-const USER_KEY = 'drishti_user';
+const USER_KEY  = 'drishti_user';
 
-// ---------------------------------------------------------------------------
-// Axios instance
-// ---------------------------------------------------------------------------
+// ── Axios instance ───────────────────────────────────────────────────────────
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 30_000, // 30 s — generous for ML inference
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 60_000, // 60 s — generous for ML inference + PDF generation
 });
 
-// Attach JWT on every request (reads fresh from localStorage each time so a
-// token stored after login is immediately picked up)
+// Inject JWT on every request
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -54,7 +47,7 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Redirect to /login on 401 (token expired / invalid)
+// Auto-logout on 401
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -71,9 +64,7 @@ axiosInstance.interceptors.response.use(
   },
 );
 
-// ---------------------------------------------------------------------------
-// Token / session helpers (used by authStore)
-// ---------------------------------------------------------------------------
+// ── Session helpers ──────────────────────────────────────────────────────────
 
 function saveSession(token: string, user: User): void {
   localStorage.setItem(TOKEN_KEY, token);
@@ -95,30 +86,18 @@ function readCurrentUser(): User | null {
   }
 }
 
-// ---------------------------------------------------------------------------
-// API methods
-// ---------------------------------------------------------------------------
-
-// ── Authentication ──────────────────────────────────────────────────────────
+// ── Authentication ───────────────────────────────────────────────────────────
 
 async function login(credentials: LoginCredentials): Promise<AuthResponse> {
-  const { data } = await axiosInstance.post<AuthResponse>(
-    '/auth/login',
-    credentials,
-  );
+  const { data } = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
   saveSession(data.access_token, data.user);
   return data;
 }
 
-function logout(): void {
-  clearSession();
-}
+function logout(): void { clearSession(); }
+function getCurrentUser(): User | null { return readCurrentUser(); }
 
-function getCurrentUser(): User | null {
-  return readCurrentUser();
-}
-
-// ── Patients ────────────────────────────────────────────────────────────────
+// ── Patients ─────────────────────────────────────────────────────────────────
 
 async function getPatients(): Promise<Patient[]> {
   const { data } = await axiosInstance.get<Patient[]>('/patients');
@@ -135,12 +114,8 @@ async function createPatient(patientData: PatientCreate): Promise<Patient> {
   return data;
 }
 
-// ── Screenings ──────────────────────────────────────────────────────────────
+// ── Screenings ───────────────────────────────────────────────────────────────
 
-/**
- * Upload a fundus image and create a new screening record.
- * Uses multipart/form-data because the backend expects a file upload.
- */
 async function createScreening(
   patientId: number,
   eyeSide: 'left' | 'right',
@@ -150,27 +125,27 @@ async function createScreening(
   form.append('patient_id', String(patientId));
   form.append('eye_side', eyeSide);
   form.append('image', image);
-
   const { data } = await axiosInstance.post<Screening>('/screenings', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return data;
 }
 
-/**
- * Trigger the AI analysis pipeline on an already-uploaded screening.
- */
 async function analyzeScreening(screeningId: number): Promise<Screening> {
-  const { data } = await axiosInstance.post<Screening>(
-    `/screenings/${screeningId}/analyze`,
-  );
+  const { data } = await axiosInstance.post<Screening>(`/screenings/${screeningId}/analyze`);
   return data;
 }
 
 async function getScreening(screeningId: number): Promise<Screening> {
-  const { data } = await axiosInstance.get<Screening>(
-    `/screenings/${screeningId}`,
-  );
+  const { data } = await axiosInstance.get<Screening>(`/screenings/${screeningId}`);
+  return data;
+}
+
+/** Fetch all screenings for a specific patient */
+async function getPatientScreenings(patientId: number): Promise<Screening[]> {
+  const { data } = await axiosInstance.get<Screening[]>('/screenings', {
+    params: { patient_id: patientId, limit: 50 },
+  });
   return data;
 }
 
@@ -185,75 +160,51 @@ async function submitClinicianReview(
   return data;
 }
 
+// ── Image URL helpers ────────────────────────────────────────────────────────
+
 /**
- * Build a URL to serve an uploaded fundus image or Grad-CAM heatmap.
- *
- * The backend stores image_path as a relative Windows path like:
- *   data\uploads\1\uuid.jpg
- * The static mount is at /uploads/ → ./data/uploads
- * So we strip "data\uploads\" (or "data/uploads/") and forward-slash the rest.
- *
- *   data\uploads\1\uuid.jpg  →  /uploads/1/uuid.jpg
+ * Convert stored OS path to a public static URL.
+ *   data\uploads\1\uuid.jpg  →  http://localhost:8000/uploads/1/uuid.jpg
  */
 function imagePathToUrl(storedPath: string): string {
-  // Normalise separators → forward slash
   const normalised = storedPath.replace(/\\/g, '/');
-  // Strip leading "data/uploads/" prefix if present
-  const relative = normalised.replace(/^data\/uploads\/?/, '');
+  const relative   = normalised.replace(/^data\/uploads\/?/, '');
   return `${API_BASE_URL}/uploads/${relative}`;
 }
 
-/**
- * Returns the URL for the fundus image using the stored image_path.
- * Falls back to building from filename if path is not available.
- */
 function getScreeningImageUrl(imagePath: string): string {
   return imagePathToUrl(imagePath);
 }
 
-/**
- * Returns the URL for the Grad-CAM explanation heatmap.
- * Explanation file is stored alongside the original as <stem>_explanation.jpg
- */
 function getExplanationImageUrl(imagePath: string): string {
-  const url = imagePathToUrl(imagePath);
-  // Replace the extension with _explanation.jpg
-  return url.replace(/\.[^/.]+$/, '_explanation.jpg');
+  return imagePathToUrl(imagePath).replace(/\.[^/.]+$/, '_explanation.jpg');
 }
 
 // ── Dashboard & Analytics ────────────────────────────────────────────────────
 
 async function getDashboardStatistics(): Promise<DashboardStatistics> {
-  const { data } =
-    await axiosInstance.get<DashboardStatistics>('/dashboard/statistics');
+  const { data } = await axiosInstance.get<DashboardStatistics>('/dashboard/statistics');
   return data;
 }
 
 async function getRecentScreenings(limit = 10): Promise<any[]> {
-  const { data } = await axiosInstance.get<any[]>(
-    '/dashboard/recent-screenings',
-    { params: { limit } },
-  );
+  const { data } = await axiosInstance.get<any[]>('/dashboard/recent-screenings', {
+    params: { limit },
+  });
   return data;
 }
 
 async function getHighPriorityCases(): Promise<any[]> {
-  const { data } = await axiosInstance.get<any[]>(
-    '/dashboard/high-priority-cases',
-  );
+  const { data } = await axiosInstance.get<any[]>('/dashboard/high-priority-cases');
   return data;
 }
 
 async function getModelPerformance(): Promise<any> {
-  const { data } = await axiosInstance.get<any>(
-    '/dashboard/model-performance',
-  );
+  const { data } = await axiosInstance.get<any>('/dashboard/model-performance');
   return data;
 }
 
-// ---------------------------------------------------------------------------
-// Exported singleton
-// ---------------------------------------------------------------------------
+// ── Export ───────────────────────────────────────────────────────────────────
 
 export const api = {
   // Auth
@@ -270,6 +221,7 @@ export const api = {
   createScreening,
   analyzeScreening,
   getScreening,
+  getPatientScreenings,
   submitClinicianReview,
   getScreeningImageUrl,
   getExplanationImageUrl,
