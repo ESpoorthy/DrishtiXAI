@@ -548,7 +548,7 @@ This project is developed for Smart India Hackathon 2026.
 
 For questions or support:
 - Email: saispoorthyeturu6@gmail.com
-- GitHub: clone https://github.com/shami2398/DrishtiXAI.git
+- GitHub: https://github.com/shami2398/DrishtiXAI.git
 
 ---
 
