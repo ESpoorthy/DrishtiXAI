@@ -1,219 +1,209 @@
 """
-Referral Prioritization Engine
-Decision support system for determining referral priority
+Referral Prioritisation Engine
+Decision support system for determining referral priority.
+
+IMPORTANT: This engine provides DECISION SUPPORT, not medical diagnosis.
+All referral recommendations should be reviewed by a qualified clinician.
+
+Three referral states:
+  URGENT   — severity ≥ 3 or quality failures at high risk
+  PRIORITY — severity 2, low confidence, or poor image quality
+  ROUTINE  — severity 0–1 with adequate confidence
+
+Reasoning text uses safe clinical language:
+  - Does NOT prescribe treatment
+  - Does NOT say "you have DR" or "you are healthy"
+  - Uses "possible", "no supported abnormality detected in this image"
+  - Recommends professional evaluation where appropriate
 """
 from typing import Dict, Optional
 
 
 class ReferralEngine:
     """
-    Referral prioritization engine for DR screening
-    
-    Combines multiple factors to recommend referral priority:
-    - Predicted DR severity
-    - Model confidence
-    - Image quality
-    - Patient risk factors (optional)
-    
-    IMPORTANT: This is decision support, not medical diagnosis
+    Referral prioritisation engine for DR screening.
+
+    Combines severity, confidence, image quality and patient risk factors
+    to recommend referral priority.
     """
-    
+
     def __init__(
         self,
-        urgent_severity_threshold: int = 3,
-        priority_severity_threshold: int = 2,
-        low_confidence_threshold: float = 0.6
+        urgent_severity_threshold:   int   = 3,
+        priority_severity_threshold: int   = 2,
+        low_confidence_threshold:    float = 0.6,
     ):
-        """
-        Initialize referral engine
-        
-        Args:
-            urgent_severity_threshold: Severity level requiring urgent referral (default: 3 = Severe NPDR)
-            priority_severity_threshold: Severity level requiring priority referral (default: 2 = Moderate NPDR)
-            low_confidence_threshold: Confidence below which human review is required
-        """
-        self.urgent_severity_threshold = urgent_severity_threshold
+        self.urgent_severity_threshold   = urgent_severity_threshold
         self.priority_severity_threshold = priority_severity_threshold
-        self.low_confidence_threshold = low_confidence_threshold
-    
+        self.low_confidence_threshold    = low_confidence_threshold
+
+    # ──────────────────────────────────────────────────────────────────
+
     def determine_referral_priority(
         self,
-        severity: int,
-        confidence: float,
-        image_quality: str,
-        quality_score: float,
-        patient_risk_factors: Optional[Dict] = None
+        severity:             int,
+        confidence:           float,
+        image_quality:        str,
+        quality_score:        float,
+        patient_risk_factors: Optional[Dict] = None,
     ) -> Dict:
         """
-        Determine referral priority based on multiple factors
-        
-        Args:
-            severity: Predicted DR severity (0-4)
-            confidence: Model confidence (0.0-1.0)
-            image_quality: Image quality category ("good", "acceptable", "poor")
-            quality_score: Image quality score (0.0-1.0)
-            patient_risk_factors: Optional dict with patient risk information
-            
-        Returns:
-            Dictionary with referral priority and reasoning
+        Determine referral priority based on multiple factors.
+
+        Returns
+        -------
+        {
+            "priority":              "routine" | "priority" | "urgent",
+            "reasoning":             str,
+            "requires_human_review": bool,
+        }
         """
-        # If image quality is poor, cannot make reliable referral decision
+        # ── Poor quality → cannot make reliable referral decision ──
         if image_quality == "poor":
             return {
                 "priority": "priority",
                 "reasoning": (
-                    "Image quality is insufficient for reliable screening. "
-                    "Priority referral recommended for clinical assessment."
+                    "Image quality is insufficient for reliable analysis. "
+                    "A clinical assessment is recommended as the AI screening "
+                    "result cannot be considered reliable for this image."
                 ),
-                "requires_human_review": True
+                "requires_human_review": True,
             }
-        
-        # If confidence is low, require human review
+
+        # ── Low confidence → require human review ─────────────────
         if confidence < self.low_confidence_threshold:
             return {
                 "priority": "priority",
                 "reasoning": (
                     f"Model confidence is low ({confidence:.1%}). "
-                    "Priority referral and clinical review recommended."
+                    "The AI screening result may not be reliable for this image. "
+                    "Clinical review is recommended."
                 ),
-                "requires_human_review": True
+                "requires_human_review": True,
             }
-        
-        # Base referral priority on severity
+
+        # ── Base priority on severity ──────────────────────────────
+        requires_review = False
+
         if severity >= self.urgent_severity_threshold:
-            # Severe NPDR or Proliferative DR
-            priority = "urgent"
+            priority  = "urgent"
             reasoning = (
-                f"Screening suggests severe diabetic retinopathy changes "
-                f"(confidence: {confidence:.1%}). "
-                "Urgent ophthalmologist review recommended to assess need for immediate intervention."
+                f"Screening detected patterns possibly associated with severe "
+                f"diabetic retinopathy changes (model confidence: {confidence:.1%}). "
+                "Urgent ophthalmologist review is recommended."
             )
-            requires_review = False
+
         elif severity >= self.priority_severity_threshold:
-            # Moderate NPDR
-            priority = "priority"
+            priority  = "priority"
             reasoning = (
-                f"Screening suggests moderate diabetic retinopathy changes "
-                f"(confidence: {confidence:.1%}). "
-                "Priority ophthalmologist referral recommended for comprehensive examination."
+                f"Screening detected patterns possibly associated with moderate "
+                f"diabetic retinopathy changes (model confidence: {confidence:.1%}). "
+                "Priority ophthalmologist referral is recommended for further evaluation."
             )
-            requires_review = False
+
         elif severity == 1:
-            # Mild NPDR
-            priority = "routine"
+            priority  = "routine"
             reasoning = (
-                f"Screening suggests mild diabetic retinopathy changes "
-                f"(confidence: {confidence:.1%}). "
-                "Routine ophthalmologist referral recommended for monitoring."
+                f"Screening detected patterns possibly associated with mild "
+                f"diabetic retinopathy changes (model confidence: {confidence:.1%}). "
+                "Routine ophthalmologist referral is recommended for monitoring."
             )
-            requires_review = False
+
         else:
-            # No DR
-            priority = "routine"
+            # severity == 0 — STATE A
+            priority  = "routine"
             reasoning = (
-                f"No significant diabetic retinopathy changes detected "
-                f"(confidence: {confidence:.1%}). "
-                "Routine annual screening recommended as per guidelines."
+                f"No supported abnormality detected in this image "
+                f"(model confidence: {confidence:.1%}). "
+                "Routine follow-up as clinically appropriate is recommended."
             )
-            requires_review = False
-        
-        # Consider patient risk factors if provided
+
+        # ── Risk factor adjustment ─────────────────────────────────
         if patient_risk_factors:
             priority, reasoning = self._adjust_for_risk_factors(
                 priority, reasoning, patient_risk_factors, severity
             )
-        
-        # Low quality even if acceptable might warrant review
+
+        # ── Acceptable quality but borderline → flag for review ───
         if image_quality == "acceptable" and quality_score < 0.7:
             requires_review = True
-            reasoning += " Clinical review recommended due to suboptimal image quality."
-        
+            reasoning += (
+                " Clinical review is recommended due to suboptimal image quality."
+            )
+
         return {
-            "priority": priority,
-            "reasoning": reasoning,
-            "requires_human_review": requires_review
+            "priority":              priority,
+            "reasoning":             reasoning,
+            "requires_human_review": requires_review,
         }
-    
+
+    # ──────────────────────────────────────────────────────────────────
+
     def _adjust_for_risk_factors(
         self,
-        priority: str,
-        reasoning: str,
+        priority:     str,
+        reasoning:    str,
         risk_factors: Dict,
-        severity: int
+        severity:     int,
     ) -> tuple:
-        """
-        Adjust referral priority based on patient risk factors
-        
-        Args:
-            priority: Current priority level
-            reasoning: Current reasoning
-            risk_factors: Patient risk factors
-            severity: Predicted severity
-            
-        Returns:
-            (adjusted_priority, adjusted_reasoning)
-        """
-        high_risk = False
+        """Upgrade referral priority when patient has additional risk factors."""
+        high_risk  = False
         risk_notes = []
-        
-        # Long-standing diabetes
+
         duration = risk_factors.get("diabetes_duration_years") or 0
         if duration > 10:
             high_risk = True
             risk_notes.append("long-standing diabetes (>10 years)")
-        
-        # Hypertension
+
         if risk_factors.get("has_hypertension") == "yes":
             high_risk = True
             risk_notes.append("concurrent hypertension")
-        
-        # No previous eye examination
+
         if risk_factors.get("previous_eye_exam") == "no":
             high_risk = True
             risk_notes.append("no previous eye examination")
-        
-        # Upgrade priority if high-risk patient
+
         if high_risk and severity > 0:
             if priority == "routine":
                 priority = "priority"
             elif priority == "priority":
                 priority = "urgent"
-            
             risk_text = " and ".join(risk_notes)
             reasoning += f" Patient has additional risk factors: {risk_text}."
-        
+
         return priority, reasoning
-    
+
+    # ──────────────────────────────────────────────────────────────────
+
     def get_patient_friendly_message(self, priority: str, severity: int) -> str:
         """
-        Generate patient-friendly message about screening result
-        
-        Args:
-            priority: Referral priority
-            severity: DR severity level
-            
-        Returns:
-            Simple, clear message for patients
+        Generate a patient-friendly summary of screening result.
+
+        Language is carefully chosen:
+        - No absolute diagnostic claims
+        - Encourages appropriate clinical follow-up
+        - Does not alarm unnecessarily for negative results
         """
         if severity == 0:
             return (
-                "The screening did not find significant changes in your eyes. "
-                "Continue regular check-ups as recommended by your doctor."
+                "The screening did not find any significant changes in the retinal images. "
+                "Regular eye check-ups are still recommended as advised by your doctor."
             )
         elif severity == 1:
             return (
-                "The screening found minor changes that need an eye specialist's review. "
+                "The screening found minor changes that warrant review by an eye specialist. "
                 "Please schedule an appointment with an ophthalmologist."
             )
         elif severity == 2:
             return (
-                "The screening found changes that require an eye specialist's examination soon. "
-                "Please schedule an ophthalmologist appointment within the next few weeks."
+                "The screening found changes that need an eye specialist's examination soon. "
+                "Please schedule an ophthalmologist appointment in the coming weeks."
             )
         elif severity >= 3:
             return (
-                "The screening found significant changes that need urgent attention. "
+                "The screening found significant changes that need prompt attention. "
                 "Please see an ophthalmologist as soon as possible."
             )
-        
-        return "Please consult with your healthcare provider about the screening results."
+        return (
+            "Please consult your healthcare provider to discuss the screening result."
+        )

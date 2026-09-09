@@ -63,11 +63,22 @@ class ScreeningService:
         Returns:
             Dictionary with complete screening results
         """
-        # Step 1: Image Quality Assessment
+        # Step 1: Image Quality Assessment (includes modality check)
         quality_result = self.quality_assessor.assess_quality(image_path)
-        
-        # If quality is poor, stop here and recommend recapture
+
+        # If quality/modality check failed, stop here
         if not quality_result["can_proceed"]:
+            modality_valid = quality_result.get("modality_valid", True)
+            if not modality_valid:
+                reasoning = (
+                    "This image does not appear to be a compatible retinal/fundus photograph. "
+                    "Please upload a suitable fundus image for DR screening."
+                )
+            else:
+                reasoning = (
+                    "Image quality is insufficient for reliable analysis. "
+                    "Please upload a clearer retinal image."
+                )
             return {
                 "status": "quality_check_failed",
                 "quality": quality_result,
@@ -75,11 +86,11 @@ class ScreeningService:
                 "explanation": None,
                 "referral": {
                     "priority": "priority",
-                    "reasoning": "Image quality insufficient for reliable screening. Clinical assessment recommended.",
-                    "requires_human_review": True
+                    "reasoning": reasoning,
+                    "requires_human_review": True,
                 },
                 "model_version": settings.MODEL_VERSION,
-                "is_demo_mode": settings.DEMO_MODE
+                "is_demo_mode": settings.DEMO_MODE,
             }
         
         # Step 2: DR Classification

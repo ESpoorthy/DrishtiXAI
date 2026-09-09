@@ -7,8 +7,8 @@ import jsPDF from 'jspdf';
 import { Patient, Screening, SEVERITY_LABELS } from '@/types';
 import { fmtDateTime, confPct, isDiabetic } from '@/lib/utils';
 
-const BRAND_BLUE  = [29, 78, 216] as const;   // brand-700
-const BRAND_LIGHT = [219, 234, 254] as const; // brand-100
+const BRAND_TEAL  = [15, 118, 110] as const;   // teal-700
+const BRAND_LIGHT = [204, 251, 241] as const;  // teal-100
 const SLATE_900   = [15, 23, 42] as const;
 const SLATE_600   = [71, 85, 105] as const;
 const SLATE_200   = [226, 232, 240] as const;
@@ -58,7 +58,7 @@ function sectionHead(doc: jsPDF, text: string, y: number) {
   filledBox(doc, 14, y, 182, 7, BRAND_LIGHT, 2);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(...BRAND_BLUE);
+  doc.setTextColor(...BRAND_TEAL);
   doc.text(text.toUpperCase(), 17, y + 4.8);
   return y + 10;
 }
@@ -111,7 +111,7 @@ export async function generateScreeningPDF(
   const CW   = PW - ML - MR; // content width
 
   // ── Header ──────────────────────────────────────────────────────────────────
-  filledBox(doc, 0, 0, PW, 28, BRAND_BLUE, 0);
+  filledBox(doc, 0, 0, PW, 28, BRAND_TEAL, 0);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
@@ -120,7 +120,7 @@ export async function generateScreeningPDF(
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(191, 219, 254);  // blue-200
+  doc.setTextColor(199, 245, 237);  // teal-200
   doc.text('Diabetic Retinopathy Screening Report', ML, 18);
 
   // Right side: report meta
@@ -170,7 +170,7 @@ export async function generateScreeningPDF(
   doc.setFontSize(12);
   doc.setTextColor(...bannerBorder);
   doc.text(
-    diabetic ? '⚠  Diabetic Retinopathy Detected' : '✓  No Diabetic Retinopathy Detected',
+    diabetic ? '⚠  Possible diabetic retinopathy detected' : '✓  No supported abnormality detected',
     ML + 4, y + 7,
   );
 
@@ -319,14 +319,14 @@ export async function generateScreeningPDF(
     doc.addPage();
 
     // Page 2 header strip
-    filledBox(doc, 0, 0, PW, 16, BRAND_BLUE, 0);
+    filledBox(doc, 0, 0, PW, 16, BRAND_TEAL, 0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(...WHITE);
     doc.text('Retinal Images', ML, 10);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(191, 219, 254);
+    doc.setTextColor(199, 245, 237);
     doc.text(`Patient: ${patient.full_name}  ·  Screening #${screening.id}`, ML, 14);
 
     let imgY = 22;
@@ -340,7 +340,7 @@ export async function generateScreeningPDF(
       // Label
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.setTextColor(...BRAND_BLUE);
+      doc.setTextColor(...BRAND_TEAL);
       doc.text(label, imgX, imgY);
 
       const boxY = imgY + 3;

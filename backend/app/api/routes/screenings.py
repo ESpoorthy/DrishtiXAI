@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pathlib import Path
 import json
+import logging
 from datetime import datetime
 
 from ...db import get_db
@@ -133,9 +134,14 @@ def analyze_screening(
             patient_risk_factors=risk_factors
         )
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(
+            "Screening analysis failed for screening_id=%s: %s", screening_id, str(e),
+            exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Analysis failed: {str(e)}"
+            detail="Analysis could not be completed. Please try again."
         )
     
     # Update screening with results

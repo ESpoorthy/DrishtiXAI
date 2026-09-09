@@ -1,42 +1,44 @@
 /**
- * Reusable loading states
+ * LoadingSpinner — inline and full-page loading states
  */
-import { Loader2 } from 'lucide-react';
+import { Eye, Loader2 } from 'lucide-react';
 import Layout from '@/components/Layout';
 
 interface Props {
-  message?: string;
   fullPage?: boolean;
+  message?:  string;
 }
 
-export function LoadingSpinner({ message = 'Loading…', fullPage = false }: Props) {
-  const inner = (
-    <div className="flex flex-col items-center justify-center gap-3 py-20">
-      <Loader2 className="w-9 h-9 text-brand-500 animate-spin" />
-      <p className="text-sm text-slate-400 font-medium">{message}</p>
-    </div>
-  );
-  if (fullPage) return <Layout>{inner}</Layout>;
-  return inner;
-}
-
-/** Skeleton placeholder cards */
-export function SkeletonCards({ count = 4, cols = 4 }: { count?: number; cols?: number }) {
+function SpinnerContent({ message }: { message?: string }) {
   return (
-    <div className={`grid grid-cols-2 lg:grid-cols-${cols} gap-5`}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="skeleton h-28" />
-      ))}
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="relative">
+        <div className="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center">
+          <Eye className="w-7 h-7 text-teal-400" />
+        </div>
+        <div className="absolute inset-0 rounded-2xl border-2 border-teal-200 border-t-teal-600 animate-spin" />
+      </div>
+      {message && <p className="text-sm text-ink-muted">{message}</p>}
     </div>
   );
 }
 
-export function SkeletonTable({ rows = 5 }: { rows?: number }) {
+export function LoadingSpinner({ fullPage, message }: Props) {
+  if (fullPage) {
+    return (
+      <Layout>
+        <SpinnerContent message={message} />
+      </Layout>
+    );
+  }
   return (
-    <div className="card p-0 overflow-hidden space-y-0">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="skeleton h-14 rounded-none border-b border-slate-100 last:border-0" />
-      ))}
+    <div className="card">
+      <SpinnerContent message={message} />
     </div>
   );
+}
+
+/** Compact inline spinner */
+export function InlineSpinner({ className = '' }: { className?: string }) {
+  return <Loader2 className={`animate-spin ${className}`} />;
 }

@@ -58,7 +58,7 @@ export default function PatientsPage() {
         {/* Search bar */}
         <div className="card py-4">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" />
             <input type="text" className="input pl-10"
               placeholder="Search by name, patient ID or district…"
               value={query} onChange={e => setQuery(e.target.value)} />
@@ -68,10 +68,10 @@ export default function PatientsPage() {
         {/* Table / states */}
         {loading ? (
           <div className="card flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="card flex flex-col items-center justify-center py-20 text-slate-400">
+          <div className="card flex flex-col items-center justify-center py-20 text-ink-subtle">
             <Users className="w-14 h-14 mb-3 opacity-30" />
             <p className="font-semibold mb-1">
               {query ? 'No matching patients' : 'No patients yet'}
@@ -89,7 +89,7 @@ export default function PatientsPage() {
           <div className="card overflow-hidden p-0">
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-slate-50 border-b border-slate-100">
+                <thead className="bg-surface-muted border-b border-surface-border">
                   <tr>
                     {['Patient', 'ID', 'Age / Gender', 'Location', 'Registered', 'Actions'].map(h => (
                       <th key={h} className="px-5 py-3.5 text-left table-header">{h}</th>
@@ -102,7 +102,7 @@ export default function PatientsPage() {
                       {/* Patient */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-primary-400
+                          <div className="w-9 h-9 rounded-full bg-teal-700
                                           flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                             {p.full_name.charAt(0).toUpperCase()}
                           </div>
@@ -159,7 +159,7 @@ export default function PatientsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 border-t border-slate-100 text-xs text-slate-400 bg-slate-50">
+            <div className="px-5 py-3 border-t border-surface-border text-xs text-ink-subtle bg-surface-muted">
               Showing {filtered.length} of {patients.length} patients
             </div>
           </div>

@@ -1,5 +1,5 @@
 /**
- * Analytics — model performance & operational metrics
+ * Analytics — model performance & operational metrics (real DB data)
  */
 import { useEffect, useState, useCallback } from 'react';
 import Layout from '@/components/Layout';
@@ -29,7 +29,7 @@ export default function AnalyticsPage() {
   if (loading) return (
     <Layout>
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
       </div>
     </Layout>
   );
@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
           {[
             {
               label: 'Total Predictions', val: total.toLocaleString(),
-              icon: Activity, gradient: 'from-brand-600 to-brand-500', ring: 'ring-brand-100',
+              icon: Activity, gradient: 'from-teal-700 to-teal-600', ring: 'ring-teal-100',
             },
             {
               label: 'Avg Confidence',
@@ -87,7 +87,7 @@ export default function AnalyticsPage() {
             {
               label: 'Agreement Rate',
               val: `${agreeRate}%`,
-              icon: TrendingUp, gradient: 'from-purple-600 to-purple-500', ring: 'ring-purple-100',
+              icon: TrendingUp, gradient: 'from-teal-600 to-emerald-500', ring: 'ring-teal-100',
             },
             {
               label: 'Cases Reviewed', val: reviewed.toLocaleString(),
@@ -98,13 +98,13 @@ export default function AnalyticsPage() {
             return (
               <div key={k.label} className="card flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{k.label}</p>
+          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{k.label}</p>
                   <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${k.gradient}
-                                  flex items-center justify-center shadow-md ring-4 ${k.ring}`}>
+                                  flex items-center justify-center shadow-sm ring-4 ${k.ring}`}>
                     <Icon className="w-4 h-4 text-white" />
                   </div>
                 </div>
-                <p className="text-3xl font-black text-slate-900">{k.val}</p>
+                <p className="text-3xl font-black text-ink">{k.val}</p>
               </div>
             );
           })}
@@ -116,11 +116,11 @@ export default function AnalyticsPage() {
           {/* Confidence distribution */}
           <div className="card space-y-5">
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-brand-500" />
-              <h3 className="text-sm font-bold text-slate-800">Confidence Distribution</h3>
+              <Target className="w-4 h-4 text-teal-600" />
+              <h3 className="text-sm font-bold text-ink">Confidence Distribution</h3>
             </div>
             {total === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">No predictions yet</p>
+              <p className="text-sm text-ink-subtle text-center py-8">No predictions yet</p>
             ) : (
               <div className="space-y-4">
                 {confDist.map(c => {
@@ -130,9 +130,9 @@ export default function AnalyticsPage() {
                       <div className="flex items-center justify-between mb-2">
                         <div>
                           <span className={`badge border text-[11px] ${c.cls}`}>{c.label}</span>
-                          <span className="text-[11px] text-slate-400 ml-2">{c.sub}</span>
+                          <span className="text-[11px] text-ink-subtle ml-2">{c.sub}</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-700">{c.val}</span>
+                        <span className="text-xs font-bold text-ink">{c.val}</span>
                       </div>
                       <div className="progress-track">
                         <div className={`progress-fill ${c.colour} animate-progress-bar`}
@@ -148,11 +148,11 @@ export default function AnalyticsPage() {
           {/* Quality distribution */}
           <div className="card space-y-5">
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-brand-500" />
-              <h3 className="text-sm font-bold text-slate-800">Image Quality Distribution</h3>
+              <ImageIcon className="w-4 h-4 text-teal-600" />
+              <h3 className="text-sm font-bold text-ink">Image Quality Distribution</h3>
             </div>
             {total === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">No images yet</p>
+              <p className="text-sm text-ink-subtle text-center py-8">No images yet</p>
             ) : (
               <div className="grid grid-cols-3 gap-3">
                 {qualDist.map(q => {
@@ -161,14 +161,14 @@ export default function AnalyticsPage() {
                   return (
                     <div key={q.label}
                       className="flex flex-col items-center gap-2 p-4 rounded-2xl
-                                 bg-slate-50 border border-slate-100 text-center">
+                                 bg-surface-subtle border border-surface-border text-center">
                       <Icon className={`w-6 h-6 ${q.iconCls}`} />
-                      <p className="text-2xl font-black text-slate-900">{q.val}</p>
-                      <p className="text-xs font-semibold text-slate-500">{q.label}</p>
+                      <p className="text-2xl font-black text-ink">{q.val}</p>
+                      <p className="text-xs font-semibold text-ink-muted">{q.label}</p>
                       <div className="w-full progress-track">
                         <div className={`progress-fill ${q.colour}`} style={{ width:`${p}%` }} />
                       </div>
-                      <span className="text-[11px] text-slate-400">{p}%</span>
+                      <span className="text-[11px] text-ink-subtle">{p}%</span>
                     </div>
                   );
                 })}
@@ -179,14 +179,14 @@ export default function AnalyticsPage() {
 
         {/* Clinician review */}
         <div className="card">
-          <div className="flex items-center gap-2 mb-6">
-            <BarChart3 className="w-4 h-4 text-brand-500" />
-            <h3 className="text-sm font-bold text-slate-800">Clinician Review Statistics</h3>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-teal-600" />
+              <h3 className="text-sm font-bold text-ink">Clinician Review Statistics</h3>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 mb-6">
+          <div className="grid sm:grid-cols-3 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-surface-border mb-6">
             {[
-              { label: 'Cases Reviewed', val: reviewed, sub: 'Total clinician reviews', icon: BarChart3,  cls: 'text-brand-600' },
+          { label: 'Cases Reviewed', val: reviewed, sub: 'Total clinician reviews', icon: BarChart3,  cls: 'text-teal-600' },
               { label: 'Agreed with AI', val: agreed,   sub: 'AI assessment confirmed',  icon: ThumbsUp,  cls: 'text-emerald-600' },
               { label: 'Disagreed',      val: reviewed - agreed, sub: 'AI assessment overridden', icon: ThumbsDown, cls: 'text-red-500' },
             ].map(m => {
@@ -195,26 +195,26 @@ export default function AnalyticsPage() {
                 <div key={m.label} className="pt-4 sm:pt-0 sm:px-6 first:pl-0">
                   <div className="flex items-center gap-2 mb-2">
                     <Icon className={`w-4 h-4 ${m.cls}`} />
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">{m.label}</p>
+                  <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">{m.label}</p>
                   </div>
-                  <p className="text-3xl font-black text-slate-900">{m.val}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{m.sub}</p>
+                  <p className="text-3xl font-black text-ink">{m.val}</p>
+                  <p className="text-xs text-ink-subtle mt-0.5">{m.sub}</p>
                 </div>
               );
             })}
           </div>
 
           {/* Agreement rate bar */}
-          <div className="bg-slate-50 rounded-2xl p-4">
+          <div className="bg-surface-subtle rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-slate-700">Overall Agreement Rate</p>
-              <p className="text-2xl font-black text-slate-900">{agreeRate}%</p>
+              <p className="text-sm font-semibold text-ink">Overall Agreement Rate</p>
+              <p className="text-2xl font-black text-ink">{agreeRate}%</p>
             </div>
             <div className="progress-track h-3">
-              <div className="progress-fill h-3 bg-gradient-to-r from-brand-500 to-emerald-400"
+              <div className="progress-fill h-3 bg-teal-500"
                    style={{ width: `${agreeRate}%` }} />
             </div>
-            <div className="flex justify-between text-[11px] text-slate-400 mt-1.5">
+            <div className="flex justify-between text-[11px] text-ink-subtle mt-1.5">
               <span>0%</span>
               <span>50%</span>
               <span>100%</span>

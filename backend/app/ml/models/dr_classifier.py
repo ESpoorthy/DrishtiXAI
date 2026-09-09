@@ -4,6 +4,29 @@ Supports both real trained models and demo mode.
 
 In demo mode: uses real image analysis (colour, contrast, brightness, vascular
 texture) to generate a clinically-plausible prediction — NOT random noise.
+
+Result states
+─────────────
+The model produces one of three high-level outcomes:
+
+  STATE A — No supported abnormality detected
+    severity == 0, is_diabetic == False
+    Wording: "No supported abnormality detected in this image."
+
+  STATE B — Possible abnormality detected
+    severity 1–4, is_diabetic == True
+    Wording: "Possible [severity label] detected."
+
+  STATE C — Unable to reliably analyse
+    Triggered externally by quality gate; the model itself does not
+    produce this state — the screening service handles it before
+    reaching prediction.
+
+Confidence note
+───────────────
+Model confidence is the softmax probability of the predicted class.
+It reflects prediction certainty for this image, NOT the probability
+that the patient has the disease.
 """
 import cv2
 import numpy as np
@@ -32,14 +55,24 @@ class DRClassifier:
         4: "Proliferative DR",
     }
 
-    # Human-readable diagnosis messages
-    DIABETIC_STATUS = {
-        0: "No diabetic retinopathy detected",
-        1: "Mild diabetic retinopathy — early signs present",
-        2: "Moderate diabetic retinopathy — significant changes",
-        3: "Severe diabetic retinopathy — urgent review required",
-        4: "Proliferative diabetic retinopathy — immediate treatment needed",
+    # ── Carefully worded screening messages (not diagnostic statements) ──
+    # Wording follows the three-state model:
+    #   severity 0 → STATE A (no supported abnormality)
+    #   severity 1–4 → STATE B (possible abnormality detected)
+    #
+    # "No supported abnormality detected" means the model did not find
+    # patterns associated with DR in this image.  It does NOT mean
+    # "the patient has no eye disease" or "the eye is healthy".
+    SCREENING_MESSAGES = {
+        0: "No supported abnormality detected in this image",
+        1: "Possible mild diabetic retinopathy — early signs present",
+        2: "Possible moderate diabetic retinopathy — significant changes detected",
+        3: "Possible severe diabetic retinopathy — prompt clinical review recommended",
+        4: "Possible proliferative diabetic retinopathy — urgent clinical review recommended",
     }
+
+    # ── Legacy key preserved for any callers expecting diabetic_status ──
+    DIABETIC_STATUS = SCREENING_MESSAGES
 
     def __init__(self, model_path: str = None, demo_mode: bool = True):
         self.demo_mode  = demo_mode
@@ -61,9 +94,9 @@ class DRClassifier:
             ),
         ])
 
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
     # Model loading (real mode)
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
 
     def _load_model(self, model_path: str):
         self.model = models.efficientnet_b0(weights=None)
@@ -74,18 +107,18 @@ class DRClassifier:
         self.model.to(self.device)
         self.model.eval()
 
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
     # Public predict
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
 
     def predict(self, image_path: str) -> Dict:
         if self.demo_mode:
             return self._image_based_predict(image_path)
         return self._real_predict(image_path)
 
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
     # Real model inference
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
 
     def _real_predict(self, image_path: str) -> Dict:
         image        = Image.open(image_path).convert("RGB")
@@ -104,14 +137,14 @@ class DRClassifier:
 
         return self._build_result(predicted, confidence, class_probs)
 
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
     # Image-content-based demo prediction
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
 
     def _image_based_predict(self, image_path: str) -> Dict:
         """
         Analyses real image pixels to produce a clinically-plausible DR
-        severity score. Checks features typically associated with DR:
+        severity score.  Checks features typically associated with DR:
 
           • Red lesion density  — microaneurysms, haemorrhages (red channel)
           • Dark spot density   — hard exudates, drusen (dark regions)
@@ -119,7 +152,10 @@ class DRClassifier:
           • Overall brightness  — retinal illumination quality
           • Contrast            — image dynamic range
 
-        These are combined into a score that maps to severity 0-4.
+        These are combined into a score that maps to severity 0–4.
+
+        IMPORTANT: This is a pixel-analysis heuristic for demonstration.
+        It is NOT a trained DR classifier and NOT for clinical use.
         """
         img = cv2.imread(image_path)
         if img is None:
@@ -130,45 +166,40 @@ class DRClassifier:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         r_ch, g_ch, b_ch = img[:, :, 2], img[:, :, 1], img[:, :, 0]  # BGR→RGB
 
-        # ── Feature 1: Red lesion score ──────────────────────────────
-        # Fundus images: microaneurysms/haemorrhages appear as dark-red regions
-        # where red channel is high relative to green channel
-        red_dominance = r_ch.astype(np.float32) - g_ch.astype(np.float32)
+        # ── Feature 1: Red lesion score ──────────────────────────
+        red_dominance   = r_ch.astype(np.float32) - g_ch.astype(np.float32)
         red_lesion_mask = (red_dominance > 30) & (r_ch > 60) & (r_ch < 180)
         red_lesion_ratio = red_lesion_mask.sum() / (h * w)
 
-        # ── Feature 2: Dark spot density (hard/soft exudates proxy) ──
-        mean_bright = float(np.mean(gray))
-        dark_thresh = max(20, mean_bright * 0.4)
-        dark_mask   = gray < dark_thresh
-        # Exclude outer black border (non-retinal area)
-        cy, cx = h // 2, w // 2
-        radius = min(h, w) // 2 - 10
+        # ── Feature 2: Dark spot density ─────────────────────────
+        mean_bright  = float(np.mean(gray))
+        dark_thresh  = max(20, mean_bright * 0.4)
+        dark_mask    = gray < dark_thresh
+        cy, cx       = h // 2, w // 2
+        radius       = min(h, w) // 2 - 10
         y_grid, x_grid = np.ogrid[:h, :w]
-        circle_mask  = ((y_grid - cy) ** 2 + (x_grid - cx) ** 2) <= radius ** 2
+        circle_mask    = ((y_grid - cy) ** 2 + (x_grid - cx) ** 2) <= radius ** 2
         dark_in_circle = (dark_mask & circle_mask).sum()
         circle_area    = circle_mask.sum()
         dark_spot_ratio = dark_in_circle / max(circle_area, 1)
 
-        # ── Feature 3: Vascular / edge complexity ────────────────────
-        # Dense new vessels → many edges in green channel (best vessel contrast)
-        blur     = cv2.GaussianBlur(g_ch, (3, 3), 0)
-        edges    = cv2.Canny(blur, 30, 80)
+        # ── Feature 3: Vascular / edge complexity ────────────────
+        blur         = cv2.GaussianBlur(g_ch, (3, 3), 0)
+        edges        = cv2.Canny(blur, 30, 80)
         edge_density = edges.sum() / (255.0 * h * w)
 
-        # ── Feature 4: Contrast ───────────────────────────────────────
-        contrast = float(np.std(gray)) / 128.0   # normalise to [0,1]
+        # ── Feature 4: Contrast ───────────────────────────────────
+        contrast = float(np.std(gray)) / 128.0
 
-        # ── Composite severity score [0, 1] ──────────────────────────
-        # Weighted combination — higher values → more severe
+        # ── Composite severity score [0, 1] ──────────────────────
         score = (
-            red_lesion_ratio * 5.0   +   # strong indicator
-            dark_spot_ratio  * 3.0   +   # moderate indicator
-            edge_density     * 4.0   +   # structural complexity
-            max(0, 0.5 - contrast)   *2.0  # low contrast = worse image quality
+            red_lesion_ratio * 5.0 +
+            dark_spot_ratio  * 3.0 +
+            edge_density     * 4.0 +
+            max(0, 0.5 - contrast) * 2.0
         )
 
-        # ── Map score → severity (0-4) ────────────────────────────────
+        # ── Map score → severity (0–4) ────────────────────────────
         if score < 0.08:
             severity = 0
         elif score < 0.18:
@@ -180,32 +211,33 @@ class DRClassifier:
         else:
             severity = 4
 
-        # ── Confidence: higher when features are unambiguous ─────────
-        # Confidence tracks how far score is from the nearest boundary
+        # ── Confidence: higher when features are unambiguous ─────
         boundaries = [0.08, 0.18, 0.32, 0.50]
         distances  = [abs(score - b) for b in boundaries]
         min_dist   = min(distances)
         # Scale to [0.65, 0.95]
         confidence = 0.65 + min(min_dist / 0.10, 1.0) * 0.30
 
-        # ── Build class probability distribution ──────────────────────
         class_probs = self._build_softmax_probs(severity, confidence)
 
         return self._build_result(severity, round(confidence, 3), class_probs)
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
+    # ──────────────────────────────────────────────────────────────────
+    # Result builder
+    # ──────────────────────────────────────────────────────────────────
 
     def _build_result(self, severity: int, confidence: float,
                       class_probs: Dict[str, float]) -> Dict:
         return {
-            "severity":             severity,
-            "severity_label":       self.CLASS_LABELS[severity],
-            "diabetic_status":      self.DIABETIC_STATUS[severity],
-            "is_diabetic":          severity > 0,
-            "confidence":           float(confidence),
-            "class_probabilities":  class_probs,
+            "severity":              severity,
+            "severity_label":        self.CLASS_LABELS[severity],
+            # screening_message uses STATE A / STATE B safe wording
+            "screening_message":     self.SCREENING_MESSAGES[severity],
+            # diabetic_status kept for backwards compatibility
+            "diabetic_status":       self.SCREENING_MESSAGES[severity],
+            "is_diabetic":           severity > 0,
+            "confidence":            float(confidence),
+            "class_probabilities":   class_probs,
             "requires_human_review": confidence < 0.70,
         }
 
@@ -215,11 +247,10 @@ class DRClassifier:
         Build a probability distribution centred on `predicted` with the
         remaining probability spread over adjacent classes.
         """
-        probs      = [0.0] * 5
-        remaining  = 1.0 - confidence
+        probs     = [0.0] * 5
+        remaining = 1.0 - confidence
         probs[predicted] = confidence
 
-        # Spread remaining probability to adjacent classes (favour nearest)
         weights = []
         for i in range(5):
             if i == predicted:
@@ -231,7 +262,6 @@ class DRClassifier:
         for i, w in weights:
             probs[i] = remaining * (w / total_w)
 
-        # Normalise
         total = sum(probs)
         probs = [p / total for p in probs]
 
@@ -242,9 +272,9 @@ class DRClassifier:
 
     def get_model_info(self) -> Dict:
         return {
-            "architecture": "EfficientNet-B0",
-            "num_classes":  5,
-            "class_labels": self.CLASS_LABELS,
-            "demo_mode":    self.demo_mode,
-            "device":       str(self.device),
+            "architecture":  "EfficientNet-B0",
+            "num_classes":   5,
+            "class_labels":  self.CLASS_LABELS,
+            "demo_mode":     self.demo_mode,
+            "device":        str(self.device),
         }
