@@ -11,11 +11,11 @@ import { UserPlus, AlertCircle, ChevronLeft, ScanEye } from 'lucide-react';
 const SECTION = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
     <div className="flex items-center gap-3 mb-4">
-      <div className="h-px flex-1 bg-slate-100" />
-      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap px-2">
+      <div className="h-px flex-1 bg-surface-border" />
+      <span className="text-xs font-bold text-ink-subtle uppercase tracking-widest whitespace-nowrap px-2">
         {title}
       </span>
-      <div className="h-px flex-1 bg-slate-100" />
+      <div className="h-px flex-1 bg-surface-border" />
     </div>
     <div className="grid sm:grid-cols-2 gap-4">{children}</div>
   </div>
@@ -31,7 +31,7 @@ const FIELD = ({
       {label} {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
-    {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+    {hint && <p className="text-xs text-ink-subtle mt-1">{hint}</p>}
   </div>
 );
 
@@ -72,13 +72,13 @@ export default function RegisterPatient() {
         {/* Header */}
         <div>
           <button onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700
+            className="flex items-center gap-1.5 text-ink-subtle hover:text-ink
                        text-xs font-medium mb-4 transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
           <h1 className="page-title flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-primary-500
-                            flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-teal-700
+                            flex items-center justify-center shadow-sm">
               <UserPlus className="w-5 h-5 text-white" />
             </div>
             Register Patient
@@ -173,7 +173,7 @@ export default function RegisterPatient() {
             </FIELD>
           </SECTION>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-2 border-t border-surface-border">
             <button type="button" onClick={() => router.back()}
               className="btn-secondary" disabled={loading}>
               Cancel

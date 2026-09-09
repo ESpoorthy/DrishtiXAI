@@ -67,15 +67,15 @@ export default function ReviewsPage() {
         {/* Content */}
         {loading ? (
           <div className="card flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
           </div>
         ) : cases.length === 0 ? (
-          <div className="card flex flex-col items-center justify-center py-20 text-slate-400">
+          <div className="card flex flex-col items-center justify-center py-20 text-ink-subtle">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200
                             flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
-            <p className="font-semibold text-slate-600 mb-1">All clear!</p>
+            <p className="font-semibold text-ink mb-1">All clear!</p>
             <p className="text-sm">No pending reviews right now</p>
           </div>
         ) : (
@@ -95,15 +95,15 @@ export default function ReviewsPage() {
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center
                                       text-white font-black text-base flex-shrink-0 shadow-sm
                                       ${isUrgent
-                                        ? 'bg-gradient-to-br from-red-500 to-orange-400'
-                                        : 'bg-gradient-to-br from-amber-500 to-yellow-400'}`}>
+                                        ? 'bg-teal-700'
+                                        : 'bg-teal-600'}`}>
                         {(c.patient_name ?? '?').charAt(0).toUpperCase()}
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <h3 className="text-base font-bold text-slate-900 truncate">
+                          <h3 className="text-base font-bold text-ink truncate">
                             {c.patient_name ?? '—'}
                           </h3>
                           <span className={priorityBadge(priority)}>
@@ -127,13 +127,13 @@ export default function ReviewsPage() {
                             },
                           ].map(({ label, val }) => (
                             <div key={label}>
-                              <p className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</p>
-                              <p className="text-xs font-semibold text-slate-700 mt-0.5">{val}</p>
+                              <p className="text-[10px] text-ink-subtle uppercase tracking-wide">{label}</p>
+                              <p className="text-xs font-semibold text-ink mt-0.5">{val}</p>
                             </div>
                           ))}
                         </div>
 
-                        <div className="flex items-center gap-3 mt-2.5 text-xs text-slate-400">
+                        <div className="flex items-center gap-3 mt-2.5 text-xs text-ink-subtle">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" /> {fmtDateShort(c.date)}
                           </span>

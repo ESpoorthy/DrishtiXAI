@@ -11,52 +11,107 @@ module.exports = {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
-        /* Brand — deep teal-blue */
-        brand: {
-          50:  '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+        /*
+         * PRIMARY: deep teal — clinical, calm, trustworthy
+         * Replaces the old blue-heavy brand palette.
+         */
+        teal: {
+          50:  '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
+          950: '#042f2e',
         },
-        primary: {
-          50:  '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+        /*
+         * SECONDARY: muted emerald / green — positive results, success states
+         */
+        emerald: {
+          50:  '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          950: '#022c22',
         },
-        /* Sidebar */
-        sidebar: {
-          bg:     '#0f172a',
-          hover:  '#1e293b',
-          active: '#1d4ed8',
-          text:   '#94a3b8',
-          active_text: '#ffffff',
-        },
+        /*
+         * Surface / background tokens
+         */
         surface: {
           DEFAULT: '#ffffff',
-          muted:   '#f8fafc',
-          border:  '#e2e8f0',
+          muted:   '#f8f9fa',        // warm off-white
+          subtle:  '#f1f5f4',        // very light teal-tinted
+          border:  '#e5e8e7',        // neutral border
+          dark:    '#1a2e2b',        // sidebar background
+        },
+        /*
+         * Semantic colour shortcuts used in components
+         * (maps to teal for primary interactions)
+         */
+        brand: {
+          50:  '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
+          950: '#042f2e',
+        },
+        /*
+         * Sidebar tokens
+         */
+        sidebar: {
+          bg:          '#1a2e2b',    // deep dark teal
+          hover:       '#243b37',
+          active:      '#0f766e',
+          text:        '#94b5b0',
+          active_text: '#ffffff',
+        },
+        /*
+         * Warning / amber — for demo banners, mild findings
+         */
+        amber: {
+          50:  '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
+        },
+        /*
+         * Charcoal text system
+         */
+        ink: {
+          DEFAULT: '#1c2b29',    // primary text
+          muted:   '#4b6660',    // secondary text
+          subtle:  '#7a9995',    // tertiary / placeholder
         },
       },
       boxShadow: {
-        card:  '0 1px 3px 0 rgb(0 0 0/.07), 0 1px 2px -1px rgb(0 0 0/.07)',
-        'card-hover': '0 4px 16px -2px rgb(0 0 0/.10), 0 2px 6px -1px rgb(0 0 0/.06)',
-        pill:  '0 1px 4px 0 rgb(0 0 0/.10)',
-        glow:  '0 0 0 3px rgba(59,130,246,.25)',
-        'btn-primary': '0 2px 8px -1px rgba(37,99,235,.45)',
+        card:       '0 1px 3px 0 rgb(0 0 0/.06), 0 1px 2px -1px rgb(0 0 0/.06)',
+        'card-hover': '0 4px 16px -2px rgb(0 0 0/.09), 0 2px 6px -1px rgb(0 0 0/.05)',
+        pill:       '0 1px 4px 0 rgb(0 0 0/.10)',
+        glow:       '0 0 0 3px rgba(13,148,136,.20)',
+        'btn-primary': '0 2px 8px -1px rgba(13,148,136,.40)',
+        inner:      'inset 0 1px 3px 0 rgb(0 0 0/.08)',
       },
       borderRadius: {
         '2xl': '1rem',
@@ -64,9 +119,14 @@ module.exports = {
         '4xl': '2rem',
       },
       backgroundImage: {
-        'gradient-brand': 'linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%)',
-        'gradient-hero':  'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0369a1 100%)',
-        'gradient-card':  'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+        /* Main gradient — deep teal, not blue */
+        'gradient-brand': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+        /* Hero / dark sections */
+        'gradient-hero':  'linear-gradient(135deg, #1a2e2b 0%, #0f4a44 50%, #0d9488 100%)',
+        /* Light card accent */
+        'gradient-card':  'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+        /* Subtle surface */
+        'gradient-surface': 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)',
       },
       animation: {
         'fade-up':      'fadeUp .4s ease both',
