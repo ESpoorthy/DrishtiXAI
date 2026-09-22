@@ -49,14 +49,14 @@ class ReferralResult(BaseModel):
 
 
 class ScreeningResponse(BaseModel):
-    """Schema for complete screening response."""
+    """Schema for complete screening response — multi-disease."""
     id: int
     patient_id: int
     eye_side: str
     screening_date: datetime
     performed_by: int
     image_filename: str
-    image_path: Optional[str] = None  # stored path for URL construction
+    image_path: Optional[str] = None
 
     # Quality
     image_quality: Optional[str] = None
@@ -64,12 +64,36 @@ class ScreeningResponse(BaseModel):
     quality_issues: Optional[str] = None
     quality_guidance: Optional[str] = None
 
-    # Prediction
+    # DR Prediction
     predicted_severity: Optional[int] = None
     prediction_confidence: Optional[float] = None
     class_probabilities: Optional[str] = None
     model_version: Optional[str] = None
     is_demo_mode: bool
+
+    # Glaucoma
+    glaucoma_severity: Optional[int] = None
+    glaucoma_confidence: Optional[float] = None
+    glaucoma_label: Optional[str] = None
+    glaucoma_message: Optional[str] = None
+    glaucoma_probabilities: Optional[str] = None
+    glaucoma_requires_review: bool = False
+
+    # Cataract (Phase 2)
+    cataract_severity: Optional[int] = None
+    cataract_confidence: Optional[float] = None
+    cataract_label: Optional[str] = None
+    cataract_message: Optional[str] = None
+    cataract_probabilities: Optional[str] = None
+    cataract_requires_review: bool = False
+    cataract_is_phase2: bool = True
+
+    # Risk Score
+    risk_score: Optional[int] = None
+    risk_category: Optional[str] = None
+    risk_breakdown: Optional[str] = None
+    risk_recommendation: Optional[str] = None
+    risk_factors_present: Optional[str] = None
 
     # Explainability
     has_explanation: bool
@@ -96,7 +120,7 @@ class ScreeningResponse(BaseModel):
 
     model_config = ConfigDict(
         from_attributes=True,
-        protected_namespaces=(),  # allow model_version field name
+        protected_namespaces=(),
     )
 
 

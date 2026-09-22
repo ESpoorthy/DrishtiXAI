@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import {
   LayoutDashboard, Users, ScanEye, ClipboardCheck,
   BarChart3, LogOut, Eye, Menu, X,
-  ChevronRight, ShieldAlert, Microscope,
+  ChevronRight, ShieldAlert, Microscope, ShieldCheck,
 } from 'lucide-react';
 
 interface Props { children: ReactNode }
@@ -21,6 +21,7 @@ const NAV = [
   { label: 'Clinical Reviews', href: '/reviews',           icon: ClipboardCheck,  roles: ['clinician','admin'] },
   { label: 'Analytics',        href: '/analytics',         icon: BarChart3,       roles: ['clinician','admin'] },
   { label: 'Model Info',       href: '/model-performance', icon: Microscope,      roles: ['clinician','admin'] },
+  { label: 'Admin Panel',      href: '/admin',             icon: ShieldCheck,     roles: ['admin'] },
 ];
 
 const ROLE_BADGE: Record<string, { label: string; cls: string }> = {

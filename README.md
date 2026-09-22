@@ -1,587 +1,677 @@
-# DrishtiXAI
+# DrishtiXAI — Multi-Disease Rural Eye Screening Platform
 
-**Explainable AI for Diabetic Retinopathy Screening in Rural India**
+> **Research Prototype — NOT for clinical use.**  
+> All AI predictions require validation by a qualified ophthalmologist.
 
-[![Smart India Hackathon 2026](https://img.shields.io/badge/SIH-2026-blue)](https://sih.gov.in)
-[![Problem Statement](https://img.shields.io/badge/PS-SIH26038-green)](https://sih.gov.in)
-[![Organization](https://img.shields.io/badge/Org-MathWorks-orange)](https://mathworks.com)
-
-## IMPORTANT DISCLAIMER
-
-**THIS IS A RESEARCH PROTOTYPE FOR DEMONSTRATION AND EVALUATION PURPOSES ONLY.**
-
-- **NOT VALIDATED FOR CLINICAL USE**
-- **NOT A MEDICAL DEVICE**
-- **NOT A REPLACEMENT FOR PROFESSIONAL MEDICAL DIAGNOSIS**
-- All predictions require clinical validation and professional review
-- Regulatory approval required before any clinical deployment
+DrishtiXAI is an explainable AI screening platform for **Diabetic Retinopathy, Glaucoma, and Cataract** detection from retinal fundus images. Built for rural Indian healthcare settings with low-resource connectivity in mind.
 
 ---
 
-## Problem Statement
+## Table of Contents
 
-**SIH26038**: Explainable AI for Diabetic Retinopathy Screening in Rural India
-
-**Organization**: MathWorks  
-**Category**: Software  
-**Theme**: Clean & Green Technology
-
-### Challenge
-
-Design an explainable, trustworthy, rural-friendly diabetic retinopathy screening system that:
-- Analyzes retinal fundus images
-- Predicts DR severity/risk
-- Explains why the model made its prediction
-- Identifies poor-quality images
-- Provides referral prioritization
-- Works for community health workers, patients, and clinicians
-
----
-
-##  Solution Overview
-
-**DrishtiXAI** is a comprehensive AI-powered screening and decision support system designed specifically for rural Indian healthcare environments. It combines state-of-the-art deep learning with explainable AI techniques to provide trustworthy, actionable insights for diabetic retinopathy screening.
-
-### Key Differentiators
-
-1. **Explainable AI**: Grad-CAM visualizations show which retinal regions influenced predictions
-2. **Trust-First Design**: Confidence scores, uncertainty quantification, and human-in-the-loop workflow
-3. **Quality Gate**: Automatic image quality assessment before prediction
-4. **Rural-Optimized**: Mobile-first, offline-capable, multilingual-ready design
-5. **Clinical Decision Support**: Referral prioritization engine with risk stratification
-6. **Audit Trail**: Complete tracking for medical AI accountability
+1. [Features](#features)
+2. [Architecture](#architecture)
+3. [Quick Start (Local)](#quick-start-local)
+4. [Installation — Backend](#installation--backend)
+5. [Installation — Frontend](#installation--frontend)
+6. [Running the Platform](#running-the-platform)
+7. [Default Credentials](#default-credentials)
+8. [API Documentation](#api-documentation)
+9. [API Reference](#api-reference)
+10. [Multi-Disease Pipeline](#multi-disease-pipeline)
+11. [Risk Scoring System](#risk-scoring-system)
+12. [PDF Report Generation](#pdf-report-generation)
+13. [Project Structure](#project-structure)
+14. [Configuration](#configuration)
+15. [Clinical Disclaimer](#clinical-disclaimer)
 
 ---
 
-##  Architecture
+## Features
+
+| Feature | Status |
+|---------|--------|
+| Diabetic Retinopathy detection (5 grades) | ✅ Phase 1 |
+| Glaucoma detection (4 grades) | ✅ Phase 1 |
+| Image quality + modality gate | ✅ Phase 1 |
+| Grad-CAM explainability heatmap | ✅ Phase 1 |
+| Composite risk scoring (0–100) | ✅ Phase 1 |
+| Server-side PDF patient report | ✅ Phase 1 |
+| Clinician review workflow | ✅ Phase 1 |
+| Admin dashboard with audit log | ✅ Phase 1 |
+| Cataract detection (4 grades) | 🔶 Phase 2 stub |
+| Real trained model weights | ⬜ Requires dataset |
+| Offline PWA sync | ⬜ Planned |
+
+---
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Frontend (Next.js)                       │
-│  ┌──────────────┬──────────────┬─────────────────────────┐ │
-│  │ Health Worker│  Clinician   │   Admin Dashboard       │ │
-│  │  Interface   │  Dashboard   │   & Analytics           │ │
-│  └──────────────┴──────────────┴─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                            ↕ REST API
-┌─────────────────────────────────────────────────────────────┐
-│                   Backend API (FastAPI)                      │
-│  ┌──────────────┬──────────────┬─────────────────────────┐ │
-│  │     Auth     │   Patient    │    Screening Service    │ │
-│  │     RBAC     │  Management  │    Dashboard/Analytics  │ │
-│  └──────────────┴──────────────┴─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                            ↕
-┌─────────────────────────────────────────────────────────────┐
-│                    AI/ML Pipeline (PyTorch)                  │
-│  ┌──────────────┬──────────────┬─────────────────────────┐ │
-│  │Image Quality │ DR Classifier│  Explainability Engine  │ │
-│  │  Assessor    │(EfficientNet)│     (Grad-CAM)          │ │
-│  └──────────────┴──────────────┴─────────────────────────┘ │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │         Referral Prioritization Engine                 │ │
-│  └────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                            ↕
-┌─────────────────────────────────────────────────────────────┐
-│              Data Layer (PostgreSQL/SQLite)                  │
-│   Users | Patients | Screenings | Audit Logs               │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────┐      HTTP/JSON      ┌─────────────────────────────┐
+│   Next.js Frontend  │ ◄──────────────────► │   FastAPI Backend            │
+│   (React + Tailwind)│                      │   (Python 3.10)              │
+│   Port 3000         │                      │   Port 8000                  │
+└─────────────────────┘                      └──────────┬──────────────────┘
+                                                        │
+                              ┌─────────────────────────┼──────────────────┐
+                              │                         │                  │
+                    ┌─────────▼──────┐    ┌─────────────▼──────┐  ┌───────▼──────┐
+                    │  ML Pipeline   │    │   SQLite / Postgres │  │  Static files│
+                    │  DR Classifier │    │   (SQLAlchemy ORM)  │  │  Fundus imgs │
+                    │  Glaucoma Cls. │    └────────────────────┘  └──────────────┘
+                    │  Cataract Cls. │
+                    │  Quality Gate  │
+                    │  Grad-CAM XAI  │
+                    │  Risk Scoring  │
+                    │  Referral Eng. │
+                    └────────────────┘
 ```
+
+**Stack:**
+- **Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS, Zustand, Recharts
+- **Backend:** FastAPI 0.104, Python 3.10, SQLAlchemy 2.0, Pydantic v2
+- **ML:** PyTorch (EfficientNet-B0), OpenCV, NumPy, Captum (Grad-CAM)
+- **PDF:** ReportLab 4.1 (server-side) + jsPDF (client fallback)
+- **DB:** SQLite (dev) / PostgreSQL (production)
+- **Auth:** JWT (python-jose) + bcrypt
 
 ---
 
-##  AI Pipeline
+## Quick Start (Local)
 
-### Complete Screening Workflow
+```powershell
+# Clone / open project
+cd C:\Users\HARI\sih2\DrishtiXAI
 
-```
-Fundus Image Upload
-        ↓
-┌─────────────────────┐
-│ Image Quality Check │ ← Blur, illumination, contrast, coverage
-└─────────────────────┘
-        ↓
-   Quality OK?
-        ↓
-┌─────────────────────┐
-│ DR Classification   │ ← EfficientNet-B0 (5 severity levels)
-└─────────────────────┘
-        ↓
-┌─────────────────────┐
-│ Explainability      │ ← Grad-CAM attention heatmap
-└─────────────────────┘
-        ↓
-┌─────────────────────┐
-│ Referral Priority   │ ← Severity + Confidence + Risk factors
-└─────────────────────┘
-        ↓
-   Clinician Review
+# Start both services with one command
+powershell -ExecutionPolicy Bypass -File start.ps1
 ```
 
-### DR Severity Classification
+Then open:
+- **App** → http://localhost:3000
+- **API Docs** → http://localhost:8000/api/docs
 
-Following standard clinical classification:
-
-- **0**: No DR
-- **1**: Mild NPDR (Non-Proliferative Diabetic Retinopathy)
-- **2**: Moderate NPDR
-- **3**: Severe NPDR
-- **4**: Proliferative DR
-
-### Referral Priority Levels
-
-- **ROUTINE**: Annual follow-up
-- **PRIORITY**: Review within weeks
-- **URGENT**: Immediate ophthalmologist referral
+Login with `admin` / `change-me-in-production`.
 
 ---
 
-##  Features
-
-### For Community Health Workers
-
-- ✅ Simple patient registration
-- ✅ Easy image capture/upload interface
-- ✅ Automatic quality feedback
-- ✅ Clear referral recommendations
-- ✅ Patient-friendly language
-- ✅ Offline-capable (queued sync)
-
-### For Clinicians
-
-- ✅ Complete screening reports
-- ✅ Original + AI explanation images
-- ✅ Confidence scores and uncertainty
-- ✅ Risk stratification
-- ✅ Review and override AI decisions
-- ✅ Clinical notes
-- ✅ High-priority case queue
-
-### For Administrators
-
-- ✅ Real-time dashboard
-- ✅ Performance analytics
-- ✅ AI/clinician agreement metrics
-- ✅ Quality monitoring
-- ✅ Audit trail
-- ✅ System health indicators
-
-### AI Transparency Features
-
-- **Confidence Scores**: Every prediction includes confidence level
-- **Visual Explanations**: Grad-CAM heatmaps show model attention
-- **Quality Gates**: Poor images flagged before prediction
-- **Uncertainty Handling**: Low-confidence cases route to human review
-- **Model Versioning**: Track which model version made prediction
-- **Audit Logs**: Complete trail of all screening activities
-
----
-
-##  Quick Start
+## Installation — Backend
 
 ### Prerequisites
 
-- **Backend**: Python 3.9+
-- **Frontend**: Node.js 18+
-- **Database**: PostgreSQL (or SQLite for dev)
+- Python 3.10+
+- pip
 
-### Installation
+### Steps
 
-#### 1. Clone Repository
-
-```bash
-git clone https://github.com/shami2398/DrishtiXAI.git
-cd DrishtiXAI
-```
-
-#### 2. Setup Backend
-
-```bash
+```powershell
 cd backend
 
-# Create virtual environment
+# 1. Create virtual environment (recommended)
 python -m venv venv
+.\venv\Scripts\Activate.ps1
 
-# Activate (Windows)
-venv\Scripts\activate
-
-# Activate (Linux/Mac)
-source venv/bin/activate
-
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# Copy environment file
-copy .env.example .env
-
-# Edit .env with your configuration
-# IMPORTANT: Change default passwords!
+# 3. Create environment file
+Copy-Item ..\  .env.example .env
+# Edit .env — set SECRET_KEY and JWT_SECRET_KEY (min 32 chars each)
 ```
 
-#### 3. Setup Frontend
+### Minimum `.env` for development
 
-```bash
+```env
+ENVIRONMENT=development
+DEBUG=true
+SECRET_KEY=your-secret-key-minimum-32-characters-long
+JWT_SECRET_KEY=your-jwt-secret-minimum-32-characters-long
+DATABASE_URL=sqlite:///./drishti_dev.db
+DEMO_MODE=true
+CORS_ORIGINS=["http://localhost:3000"]
+ADMIN_EMAIL=admin@drishti.local
+ADMIN_PASSWORD=your-admin-password
+```
+
+> `SECRET_KEY` and `JWT_SECRET_KEY` must be at least 32 characters.  
+> Generate them with: `python -c "import secrets; print(secrets.token_hex(32))"`
+
+---
+
+## Installation — Frontend
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+### Steps
+
+```powershell
 cd frontend
 
 # Install dependencies
 npm install
 
-# Copy environment file
-copy .env.example .env.local
-
-# Edit .env.local if needed
+# Create environment file
+# Create frontend/.env.local:
+# NEXT_PUBLIC_API_URL=http://localhost:8000
+# NEXT_PUBLIC_APP_NAME=DrishtiXAI
 ```
 
-### Running the Application
+---
 
-#### Terminal 1: Start Backend
+## Running the Platform
 
-```bash
+### Option A — Single script (recommended)
+
+```powershell
+# From DrishtiXAI root:
+powershell -ExecutionPolicy Bypass -File start.ps1
+```
+
+Starts both backend (port 8000) and frontend (port 3000) together.  
+Press `Ctrl+C` to stop both.
+
+### Option B — Separate terminals
+
+**Terminal 1 — Backend:**
+```powershell
 cd backend
-venv\Scripts\activate
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Backend will be available at: `http://localhost:8000`  
-API Documentation: `http://localhost:8000/api/docs`
-
-#### Terminal 2: Start Frontend
-
-```bash
+**Terminal 2 — Frontend:**
+```powershell
 cd frontend
 npm run dev
 ```
 
-Frontend will be available at: `http://localhost:3000`
+### Option C — Docker Compose
 
-### Default Login Credentials
-
-** CHANGE IN PRODUCTION!**
-
-- **Username**: `admin`
-- **Password**: `change-me-in-production`
-- **Role**: Admin
-
----
-
-## 📖 Usage Guide
-
-### 1. Register a Patient
-
-1. Navigate to **Patients** → **Register New Patient**
-2. Fill in patient information (ID, name, age, medical history)
-3. Click **Register & Proceed to Screening**
-
-### 2. Perform Screening
-
-1. Select eye (left/right)
-2. Upload fundus image (JPG/PNG, max 10MB)
-3. Click **Upload & Analyze**
-4. Wait for AI analysis (~5-10 seconds)
-
-### 3. Review Results
-
-The system will show:
-- **Image Quality Assessment** (Good/Acceptable/Poor)
-- **DR Severity Prediction** with confidence
-- **AI Explanation** (heatmap visualization)
-- **Referral Priority Recommendation**
-
-### 4. Clinician Review (if applicable)
-
-1. Clinicians can view all screening details
-2. Review AI explanation and reasoning
-3. Agree or disagree with AI assessment
-4. Provide clinical notes
-5. Set final referral priority
-
----
-
-##  Demo Mode
-
-**Current Status: DEMO MODE ENABLED**
-
-The system runs in demo mode by default, which:
-- Uses synthetic predictions (no trained model required)
-- Generates realistic confidence scores and class probabilities
-- Creates demonstration explanation heatmaps
-- Clearly labels all outputs as "DEMO MODE"
-
-### Why Demo Mode?
-
-Training a production-quality DR classification model requires:
-- Large labeled dataset (10,000+ images)
-- Clinical validation
-- Multiple weeks of GPU training
-- Regulatory compliance
-
-Demo mode allows evaluation of:
-- ✅ System architecture
-- ✅ User interface/workflow
-- ✅ Explainability approach
-- ✅ Decision support logic
-- ✅ Integration capabilities
-
-### Switching to Real Model
-
-1. Train or obtain a DR classification model
-2. Save weights as `.pth` file
-3. Update `backend/app/core/config.py`:
-   ```python
-   DEMO_MODE = False
-   MODEL_PATH = "./models/dr_model.pth"
-   ```
-4. Restart backend
-
----
-
-##  Security & Privacy
-
-### Implemented
-
-- ✅ JWT-based authentication
-- ✅ Role-based access control (RBAC)
-- ✅ Password hashing (bcrypt)
-- ✅ Secure session management
-- ✅ Audit logging for all actions
-- ✅ Input validation
-- ✅ CORS configuration
-
-### For Production
-
-- [ ] HTTPS/TLS encryption
-- [ ] Data encryption at rest
-- [ ] PHI compliance (HIPAA/equivalent)
-- [ ] Regular security audits
-- [ ] Penetration testing
-- [ ] Secure credential management
-
----
-
-##  Model Card
-
-### Model Information
-
-- **Architecture**: EfficientNet-B0
-- **Task**: Multi-class classification (5 classes)
-- **Input**: RGB fundus images (224x224)
-- **Output**: DR severity (0-4) with confidence
-
-### Intended Use
-
-**Primary**: Screening decision support in resource-limited settings  
-**Users**: Trained community health workers with clinician oversight  
-**Not For**: Autonomous diagnosis, treatment decisions, or replacing ophthalmologist examination
-
-### Limitations
-
-- ⚠️ Current version is DEMO/PROTOTYPE
-- ⚠️ Requires clinical validation before deployment
-- ⚠️ Performance depends heavily on image quality
-- ⚠️ May not generalize across different cameras/populations
-- ⚠️ Should not be sole basis for clinical decisions
-- ⚠️ Regulatory approval required for clinical use
-
-### Ethical Considerations
-
-- **Fairness**: Performance should be evaluated across demographic groups
-- **Bias**: Training data representation affects model fairness
-- **Transparency**: Explainability helps but doesn't guarantee correctness
-- **Accountability**: Human clinician remains responsible for final decisions
-- **Privacy**: Patient data must be protected per local regulations
-
----
-
-##  Clinical Workflow Integration
-
-### Recommended Deployment Model
-
-```
-Community Health Center
-        ↓
-Health Worker Screening (DrishtiXAI)
-        ↓
-    ┌─────────┴─────────┐
-    ↓                   ↓
-Routine Cases      Urgent Cases
-    ↓                   ↓
-Regular Follow-up  Immediate Referral
-                        ↓
-                 Ophthalmologist
+```powershell
+# Requires Docker Desktop
+docker-compose up --build
 ```
 
-### Quality Assurance
+---
 
-1. **Regular Calibration**: Validate against expert grading
-2. **Performance Monitoring**: Track agreement rates
-3. **Continuous Training**: Update model with new data
-4. **Feedback Loop**: Incorporate clinician corrections
+## Default Credentials
+
+| Role | Username | Password | Access |
+|------|----------|----------|--------|
+| Admin | `admin` | `change-me-in-production` | Full system access |
+
+> Change the admin password in `.env` before deploying.  
+> Register additional users via `POST /api/v1/auth/register`.
+
+**User Roles:**
+- `health_worker` — register patients, upload + analyse screenings
+- `clinician` — all health_worker permissions + clinician review + analytics
+- `admin` — all permissions + admin dashboard + audit log
 
 ---
 
-##  Development
+## API Documentation
 
-### Project Structure
+Interactive API docs (Swagger UI) are available at:
 
 ```
-Diabetic-Retinopathy-screening-platform/
+http://localhost:8000/api/docs
+```
+
+ReDoc alternative:
+```
+http://localhost:8000/api/redoc
+```
+
+Raw OpenAPI JSON:
+```
+http://localhost:8000/openapi.json
+```
+
+---
+
+## API Reference
+
+All routes are prefixed with `/api/v1`.
+
+### Authentication
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| `POST` | `/auth/register` | Register new user | — |
+| `POST` | `/auth/login` | Login, returns JWT | — |
+
+**Login request:**
+```json
+POST /api/v1/auth/login
+{
+  "username": "admin",
+  "password": "change-me-in-production"
+}
+```
+
+**Login response:**
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "bearer",
+  "user": { "id": 1, "role": "admin", "full_name": "..." }
+}
+```
+
+All subsequent requests require:
+```
+Authorization: Bearer <access_token>
+```
+
+---
+
+### Patients
+
+| Method | Path | Description | Role |
+|--------|------|-------------|------|
+| `POST` | `/patients` | Register patient | health_worker+ |
+| `GET` | `/patients` | List patients (facility-scoped) | any |
+| `GET` | `/patients/{id}` | Get patient details | any |
+| `GET` | `/patients/search/{patient_id_str}` | Search by string ID | any |
+
+---
+
+### Screenings
+
+| Method | Path | Description | Role |
+|--------|------|-------------|------|
+| `POST` | `/screenings` | Upload fundus image | health_worker+ |
+| `POST` | `/screenings/{id}/analyze` | Run full AI pipeline | any |
+| `POST` | `/screenings/{id}/review` | Submit clinician review | clinician+ |
+| `GET` | `/screenings` | List screenings | any |
+| `GET` | `/screenings/{id}` | Get screening detail | any |
+| `GET` | `/screenings/{id}/image` | Download original image | any |
+| `GET` | `/screenings/{id}/explanation` | Download Grad-CAM heatmap | any |
+
+**Upload + Analyse (two-step):**
+```powershell
+# Step 1: Upload
+$form = @{ patient_id = 1; eye_side = "right"; image = Get-Item "fundus.jpg" }
+$s = Invoke-RestMethod -Uri ".../screenings" -Method Post -Form $form -Headers $h
+
+# Step 2: Analyse
+$result = Invoke-RestMethod -Uri ".../screenings/$($s.id)/analyze" -Method Post -Headers $h
+```
+
+**Analyse response includes:**
+```json
+{
+  "id": 42,
+  "predicted_severity": 2,
+  "prediction_confidence": 0.83,
+  "glaucoma_severity": 1,
+  "glaucoma_confidence": 0.71,
+  "cataract_severity": 0,
+  "cataract_confidence": 0.78,
+  "risk_score": 48,
+  "risk_category": "medium",
+  "risk_breakdown": "{\"dr_points\":18.3,\"glaucoma_points\":5.0,...}",
+  "referral_priority": "priority",
+  "has_explanation": true,
+  "status": "analyzed"
+}
+```
+
+---
+
+### Reports — PDF
+
+| Method | Path | Description | Role |
+|--------|------|-------------|------|
+| `GET` | `/reports/{screening_id}/pdf` | Download PDF report | any |
+
+Returns a streaming `application/pdf` response.  
+Falls back to plain text if ReportLab is unavailable.
+
+**Example (curl):**
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8000/api/v1/reports/42/pdf \
+     --output report.pdf
+```
+
+**PDF contents:**
+- Patient demographics
+- Image quality assessment
+- DR, Glaucoma, Cataract results table
+- Composite risk score + breakdown
+- Referral recommendation
+- Grad-CAM explanation summary
+- Clinician review (if completed)
+- Clinical disclaimer (mandatory)
+
+---
+
+### Dashboard
+
+| Method | Path | Description | Role |
+|--------|------|-------------|------|
+| `GET` | `/dashboard/statistics` | Full stats incl. multi-disease | any |
+| `GET` | `/dashboard/recent-screenings` | Recent 10 screenings | any |
+| `GET` | `/dashboard/high-priority-cases` | Urgent + review-required | clinician+ |
+| `GET` | `/dashboard/model-performance` | Confidence + quality metrics | clinician+ |
+| `GET` | `/dashboard/admin/summary` | System-wide admin overview | admin |
+
+**Statistics response includes:**
+```json
+{
+  "total_screenings": 150,
+  "today_screenings": 12,
+  "high_risk_cases": 8,
+  "glaucoma_distribution": { "none":90,"suspect":45,"probable":12,"advanced":3 },
+  "cataract_distribution": { "none":110,"trace":28,"moderate":10,"dense":2 },
+  "weekly_trend": [{"date":"Mon","count":18}, ...]
+}
+```
+
+**Admin summary response includes:**
+```json
+{
+  "total_users": 5,
+  "active_users": 5,
+  "total_patients": 80,
+  "role_breakdown": { "health_worker":3,"clinician":1,"admin":1 },
+  "facility_breakdown": [{"facility":"PHC Wardha","count":45}],
+  "recent_audit": [{"action":"screening_analyzed","user_role":"health_worker",...}]
+}
+```
+
+---
+
+## Multi-Disease Pipeline
+
+Every `POST /screenings/{id}/analyze` runs this 7-step pipeline:
+
+```
+Image
+  │
+  ▼
+┌─────────────────────────────────────┐
+│ Step 1: Quality & Modality Gate     │  → Rejects non-fundus or poor-quality images
+│  - Modality heuristic (circular     │
+│    disc, red channel dominance)     │
+│  - Blur / illumination / contrast   │
+└─────────────────┬───────────────────┘
+                  │ can_proceed=True
+  ┌───────────────┼──────────────────┐
+  ▼               ▼                  ▼
+Step 2: DR     Step 3: Glaucoma   Step 4: Cataract (P2)
+EfficientNet   CDR proxy +        Opacity / clarity
+pixel heuristic rim variance      heuristic (Phase 2)
+severity 0–4   severity 0–3       severity 0–3
+  │               │                  │
+  └───────┬────────┘                  │
+          ▼                           │
+     Step 5: Grad-CAM                 │
+     (on DR prediction)               │
+          │                           │
+          └─────────────┬─────────────┘
+                        ▼
+                  Step 6: Risk Score
+                  DR(40) + Glaucoma(30) +
+                  Cataract(20) + Clinical(30)
+                  → 0–100, Low/Medium/High
+                        │
+                        ▼
+                  Step 7: Referral Engine
+                  + multi-disease upgrade
+                  → routine/priority/urgent
+```
+
+**Demo mode:** All classifiers use pixel-analysis heuristics. The same image always produces the same result (deterministic). No trained weights required.
+
+**Real model mode:** Set `DEMO_MODE=false` in `.env` and place model weights at:
+```
+backend/models/dr_model.pth       # EfficientNet-B0, 5-class DR
+backend/models/glaucoma_model.pth # EfficientNet-B0, 4-class glaucoma
+backend/models/cataract_model.pth # EfficientNet-B0, 4-class cataract (Phase 2)
+```
+
+---
+
+## Risk Scoring System
+
+The composite risk score combines AI predictions + patient clinical factors:
+
+| Component | Max Points | Notes |
+|-----------|-----------|-------|
+| DR severity | 40 | Scaled by DR confidence |
+| Glaucoma severity | 30 | Scaled by glaucoma confidence |
+| Cataract severity | 20 | Scaled by cataract confidence (Phase 2) |
+| Clinical factors | 30 | Diabetes, duration, hypertension, age, prior exam |
+| Quality penalty | −10 | Applied for poor or borderline image quality |
+| **Total (raw)** | **120** | Normalised to 0–100 |
+
+**Risk categories:**
+| Score | Category | Action |
+|-------|----------|--------|
+| 0–34 | 🟢 Low | Routine follow-up |
+| 35–64 | 🟡 Medium | Ophthalmologist appointment within weeks |
+| 65–100 | 🔴 High | Prompt ophthalmologist referral |
+
+**Confidence weighting:** Low-confidence predictions contribute less to the score:
+- ≥80% confidence → full weight (1.0×)
+- 60–79% → partial weight (0.5–1.0×)
+- <60% → half weight (0.5×)
+
+> Risk score is for **decision support only**. Not a validated clinical risk calculator.
+
+---
+
+## PDF Report Generation
+
+DrishtiXAI generates patient reports two ways:
+
+### Server-side (ReportLab) — preferred
+
+`GET /api/v1/reports/{screening_id}/pdf`
+
+- Full A4 multi-page PDF
+- Embedded tables, colour-coded results, risk breakdown
+- Mandatory clinical disclaimer on every page
+- Works without a browser
+
+### Client-side (jsPDF) — fallback
+
+Called from the screening detail page "PDF Report" button.  
+Embeds fundus image and Grad-CAM heatmap directly.
+
+Both include:
+- Patient name, ID, demographics
+- DR / Glaucoma / Cataract results
+- Risk score and breakdown
+- Referral recommendation
+- Clinician review (if completed)
+- Model version and demo mode flag
+- Disclaimer: *"Research Prototype — NOT FOR CLINICAL USE"*
+
+---
+
+## Project Structure
+
+```
+DrishtiXAI/
+├── start.ps1                    ← One-command launcher
+├── docker-compose.yml
+├── Dockerfile.backend
+├── Dockerfile.frontend
+│
 ├── backend/
-│   ├── app/
-│   │   ├── api/           # API routes
-│   │   ├── core/          # Config, security
-│   │   ├── db/            # Database
-│   │   ├── ml/            # AI/ML pipeline
-│   │   │   ├── models/    # DR classifier
-│   │   │   ├── quality/   # Quality assessor
-│   │   │   └── xai/       # Grad-CAM
-│   │   ├── models/        # Database models
-│   │   ├── schemas/       # Pydantic schemas
-│   │   ├── services/      # Business logic
-│   │   └── utils/         # Utilities
-│   ├── tests/             # Backend tests
+│   ├── .env                     ← Environment variables (create from .env.example)
 │   ├── requirements.txt
-│   └── .env.example
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Next.js pages
-│   │   ├── lib/           # API client
-│   │   ├── store/         # State management
-│   │   ├── types/         # TypeScript types
-│   │   └── styles/        # Global styles
-│   ├── public/            # Static assets
-│   ├── package.json
-│   └── tsconfig.json
-├── models/                # Model weights (not in repo)
-├── data/                  # Data directory
-└── README.md
+│   └── app/
+│       ├── main.py              ← FastAPI app, CORS, routers, startup
+│       ├── core/
+│       │   ├── config.py        ← Pydantic settings (loaded from .env)
+│       │   └── security.py      ← JWT creation/verification, bcrypt
+│       ├── api/
+│       │   ├── dependencies.py  ← get_current_user, role guards
+│       │   └── routes/
+│       │       ├── auth.py
+│       │       ├── patients.py
+│       │       ├── screenings.py
+│       │       ├── dashboard.py  ← Stats, admin summary, model performance
+│       │       └── reports.py    ← PDF report endpoint (NEW)
+│       ├── db/
+│       │   └── base.py          ← SQLAlchemy engine, session, Base
+│       ├── models/              ← SQLAlchemy ORM models
+│       │   ├── user.py
+│       │   ├── patient.py
+│       │   ├── screening.py     ← Extended with glaucoma/cataract/risk columns
+│       │   └── audit.py
+│       ├── schemas/             ← Pydantic request/response schemas
+│       │   ├── user.py
+│       │   ├── patient.py
+│       │   └── screening.py     ← Extended ScreeningResponse
+│       ├── ml/
+│       │   ├── models/
+│       │   │   ├── dr_classifier.py       ← DR (EfficientNet-B0, 5-class)
+│       │   │   ├── glaucoma_classifier.py ← Glaucoma (NEW, 4-class)
+│       │   │   └── cataract_classifier.py ← Cataract Phase 2 (NEW, 4-class)
+│       │   ├── quality/
+│       │   │   └── quality_assessor.py    ← 2-stage quality + modality gate
+│       │   └── xai/
+│       │       └── gradcam.py             ← Grad-CAM + demo explanation engine
+│       └── services/
+│           ├── screening_service.py  ← Multi-disease pipeline orchestrator (UPDATED)
+│           ├── referral_engine.py    ← Referral priority decision engine
+│           └── risk_scoring.py       ← Composite risk scoring (NEW)
+│
+└── frontend/
+    ├── package.json
+    └── src/
+        ├── types/index.ts        ← All TypeScript types (UPDATED)
+        ├── lib/
+        │   ├── api.ts            ← Axios client + all endpoint wrappers (UPDATED)
+        │   ├── pdf.ts            ← Client-side jsPDF report
+        │   └── utils.ts          ← Date/badge/score helpers
+        ├── store/
+        │   └── authStore.ts      ← Zustand auth state
+        ├── components/
+        │   ├── Layout.tsx        ← Sidebar nav (UPDATED — Admin Panel link)
+        │   └── ui/
+        │       ├── ScreeningResultBanner.tsx
+        │       ├── ConfidenceBar.tsx
+        │       ├── ImageViewer.tsx
+        │       ├── RiskScoreBadge.tsx      ← Arc gauge + breakdown (NEW)
+        │       ├── DiseaseResultCard.tsx   ← Per-disease result card (NEW)
+        │       └── MultiDiseaseResults.tsx ← Combined 3-disease section (NEW)
+        └── pages/
+            ├── dashboard.tsx
+            ├── admin.tsx              ← Admin dashboard page (NEW)
+            ├── patients/
+            ├── screening/
+            │   ├── new.tsx            ← UPDATED: MultiDiseaseResults injected
+            │   └── [id].tsx           ← UPDATED: MultiDiseaseResults + server PDF
+            ├── reviews.tsx
+            ├── analytics.tsx
+            └── model-performance.tsx
 ```
-
-### Technology Stack
-
-**Backend**
-- FastAPI (Python web framework)
-- SQLAlchemy (ORM)
-- PostgreSQL/SQLite (Database)
-- PyTorch (Deep learning)
-- OpenCV (Image processing)
-- Captum (Explainability)
-
-**Frontend**
-- Next.js 14 (React framework)
-- TypeScript (Type safety)
-- Tailwind CSS (Styling)
-- Axios (HTTP client)
-- Zustand (State management)
 
 ---
 
-##  Testing
+## Configuration
 
-### Backend Tests
+All backend settings live in `backend/.env`. Full reference:
 
-```bash
+```env
+# ── Application ──────────────────────────────────────
+ENVIRONMENT=development        # development | production
+DEBUG=true
+API_HOST=0.0.0.0
+API_PORT=8000
+
+# ── Security (REQUIRED — min 32 chars each) ───────────
+SECRET_KEY=<generate with: python -c "import secrets; print(secrets.token_hex(32))">
+JWT_SECRET_KEY=<generate separately>
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# ── Database ──────────────────────────────────────────
+DATABASE_URL=sqlite:///./drishti_dev.db
+# For PostgreSQL: postgresql://user:pass@localhost:5432/drishti_db
+
+# ── Storage ───────────────────────────────────────────
+UPLOAD_DIR=./data/uploads
+MAX_UPLOAD_SIZE=10485760        # 10 MB
+
+# ── ML Models ─────────────────────────────────────────
+MODEL_PATH=./models
+DEMO_MODE=true                  # false = use real model weights
+MODEL_VERSION=v2.0.0
+CONFIDENCE_THRESHOLD=0.7
+QUALITY_THRESHOLD=0.6
+
+# ── Referral thresholds ───────────────────────────────
+URGENT_REFERRAL_SEVERITY=3
+PRIORITY_REFERRAL_SEVERITY=2
+LOW_CONFIDENCE_THRESHOLD=0.6
+
+# ── CORS ─────────────────────────────────────────────
+CORS_ORIGINS=["http://localhost:3000"]
+
+# ── Admin defaults ────────────────────────────────────
+ADMIN_EMAIL=admin@drishti.local
+ADMIN_PASSWORD=change-me-in-production
+```
+
+### Frontend environment (`frontend/.env.local`)
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME=DrishtiXAI
+```
+
+---
+
+## Clinical Disclaimer
+
+> **DrishtiXAI is a research prototype developed for SIH 2026 (SIH26038).**
+>
+> - All AI predictions are generated by pixel-analysis heuristics in demo mode.
+> - No model has been trained on a validated clinical dataset.
+> - Results must **not** be used as the basis for any medical decision.
+> - All outputs require review and confirmation by a qualified ophthalmologist.
+> - Glaucoma and Cataract detection modules are particularly experimental (Phase 2).
+> - The risk score is a decision-support tool, not a validated clinical risk calculator.
+> - This software is provided for educational and research purposes only.
+
+---
+
+## Development Notes
+
+**Resetting the database** (after schema changes):
+
+```powershell
+# Stop the backend, then:
+Remove-Item backend/drishti_dev.db -Force
+# Restart — SQLAlchemy recreates all tables automatically
+```
+
+**Adding real model weights:**
+
+1. Train EfficientNet-B0 on your dataset (5-class for DR, 4-class for glaucoma/cataract)
+2. Save checkpoint as `{"model_state_dict": state_dict}`
+3. Place at `backend/models/dr_model.pth` (or glaucoma/cataract equivalents)
+4. Set `DEMO_MODE=false` and `MODEL_PATH=./models` in `.env`
+
+**Running tests:**
+
+```powershell
 cd backend
-pytest tests/ -v --cov=app
+pytest tests/ -v
 ```
 
-### Frontend Tests
-
-```bash
-cd frontend
-npm test
-```
-
-### Manual Testing Checklist
-
-- [ ] User registration and login
-- [ ] Patient registration
-- [ ] Image upload (valid and invalid formats)
-- [ ] Image quality assessment
-- [ ] DR prediction
-- [ ] Explanation generation
-- [ ] Referral prioritization
-- [ ] Clinician review submission
-- [ ] Dashboard statistics
-- [ ] Analytics page
-
 ---
 
-##  Future Enhancements
-
-### Near Term
-
-- [ ] PWA offline functionality
-- [ ] Multilingual support (Hindi, Tamil, Telugu, etc.)
-- [ ] Export screening reports (PDF)
-- [ ] Batch screening mode
-- [ ] Mobile app (React Native)
-
-### Long Term
-
-- [ ] Federated learning for privacy-preserving model updates
-- [ ] Integration with electronic health records
-- [ ] Telemedicine consultation feature
-- [ ] Longitudinal patient tracking
-- [ ] Population health analytics
-- [ ] Model retraining pipeline
-
----
-
-## License
-
-This project is developed for Smart India Hackathon 2026.
-
----
-
-## Acknowledgments
-
-- **MathWorks** for the problem statement
-- **Smart India Hackathon 2026** for the opportunity
-- Open-source community for tools and libraries
-- Medical professionals for clinical insights
-
----
-
-##  Contact
-
-For questions or support:
-- Email: saispoorthyeturu6@gmail.com
-- GitHub: https://github.com/shami2398/DrishtiXAI.git
-
----
-
-##  Regulatory & Compliance Note
-
-This system is a **research prototype** and has not been:
-- Validated in clinical trials
-- Approved by medical device regulators (FDA, CDSCO, etc.)
-- Certified for clinical use
-
-**Before any clinical deployment**, the following are required:
-1. Clinical validation studies
-2. Regulatory approval
-3. Quality management system (ISO 13485)
-4. Risk management (ISO 14971)
-5. Clinical evidence documentation
-6. Post-market surveillance plan
-
-**The system is for research, demonstration, and educational purposes only.**
-
----
-
-## About the Team
-
-**Team Name: AetherAi**
-
-| GitHub Handle | Name | Role |
-|---|---|---|
-| [@ESpoorthy](https://github.com/ESpoorthy) | Sai Spoorthy Eturu | Collaborator |
-| [@Kommera-Harihansika](https://github.com/Kommera-Harihansika) | Kommera Harihanika | Collaborator |
-| [@Duddalasrija](https://github.com/Duddalasrija) | Duddala Srija | Collaborator |
-| [@glory-pranavi](https://github.com/glory-pranavi) | Glory Pranavi B | Collaborator |
-| [@Katakam Sahithi Rithvika](https://github.com/sahithirithvika) | Katakam Sahithi Rithvika | Collaborator |
-| [@Shamithri Gowravarapu](https://github.com/shami2398) | Shamithri Gowravarapu | Team Leader |
-
-**Built with ❤️ for Smart India Hackathon 2026**
+*Built for Smart India Hackathon 2026 — SIH26038*  
+*© 2026 DrishtiXAI Team*

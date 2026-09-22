@@ -1,5 +1,5 @@
 /**
- * Screening detail — full report + clinician review + PDF download
+ * Screening detail — full multi-disease report + clinician review + PDF download
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -10,8 +10,13 @@ import { ConfidenceBar } from '@/components/ui/ConfidenceBar';
 import { MedicalImage } from '@/components/ui/ImageViewer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { MultiDiseaseResults } from '@/components/ui/MultiDiseaseResults';
+import { RiskScoreBadge } from '@/components/ui/RiskScoreBadge';
 import { fmtDate, fmtDateTime, priorityBadge, qualityBadge, severityClass } from '@/lib/utils';
-import { Patient, Screening, SEVERITY_LABELS, ReferralPriority, ClinicianReview, ScreeningStatus } from '@/types';
+import {
+  Patient, Screening, SEVERITY_LABELS, ReferralPriority,
+  ClinicianReview, ScreeningStatus,
+} from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import {
   Eye, AlertTriangle, CheckCircle2, AlertCircle, ChevronLeft,
@@ -76,11 +81,16 @@ export default function ScreeningDetail() {
     if (!screening || !patient) return;
     setPdfLoading(true);
     try {
-      const { generateScreeningPDF } = await import('@/lib/pdf');
-      const imgUrl = screening.image_path ? api.getScreeningImageUrl(screening.image_path) : null;
-      const expUrl = screening.has_explanation && screening.image_path
-        ? api.getExplanationImageUrl(screening.image_path) : null;
-      await generateScreeningPDF(screening, patient, imgUrl, expUrl);
+      // Prefer server-generated PDF (ReportLab), fallback to client jsPDF
+      try {
+        await api.downloadPdfReport(screening.id, patient.patient_id);
+      } catch {
+        const { generateScreeningPDF } = await import('@/lib/pdf');
+        const imgUrl = screening.image_path ? api.getScreeningImageUrl(screening.image_path) : null;
+        const expUrl = screening.has_explanation && screening.image_path
+          ? api.getExplanationImageUrl(screening.image_path) : null;
+        await generateScreeningPDF(screening, patient, imgUrl, expUrl);
+      }
     } catch (e) {
       console.error('PDF generation failed:', e);
       alert('PDF generation failed. Please try again.');
@@ -230,6 +240,9 @@ export default function ScreeningDetail() {
 
           {/* Right — analysis sidebar */}
           <div className="space-y-4">
+
+            {/* Multi-disease results */}
+            <MultiDiseaseResults screening={screening} />
 
             {/* AI result */}
             <div className="card space-y-4">

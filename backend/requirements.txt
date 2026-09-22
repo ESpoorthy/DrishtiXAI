@@ -29,6 +29,9 @@ scipy==1.11.4
 # Explainability
 captum==0.7.0
 
+# PDF generation (server-side reports)
+reportlab==4.1.0
+
 # Utilities
 python-dotenv==1.0.0
 aiofiles==23.2.1

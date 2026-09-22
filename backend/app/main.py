@@ -11,6 +11,7 @@ import os
 from .core.config import settings
 from .db import Base, engine, SessionLocal
 from .api.routes import auth, patients, screenings, dashboard
+from .api.routes import reports as reports_router
 
 # Create database tables on startup
 Base.metadata.create_all(bind=engine)
@@ -62,10 +63,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     description=(
-        "Explainable AI for Diabetic Retinopathy Screening in Rural India. "
-        "A trust-first, rural-friendly screening and decision support system."
+        "Multi-Disease Retinal Screening Platform — Diabetic Retinopathy, Glaucoma & Cataract. "
+        "Explainable AI for rural eye screening with risk scoring, PDF reports, and clinical decision support."
     ),
-    version="1.0.0",
+    version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     lifespan=lifespan,
@@ -81,10 +82,11 @@ app.add_middleware(
 )
 
 # API routers
-app.include_router(auth.router,       prefix=settings.API_V1_PREFIX)
-app.include_router(patients.router,   prefix=settings.API_V1_PREFIX)
-app.include_router(screenings.router, prefix=settings.API_V1_PREFIX)
-app.include_router(dashboard.router,  prefix=settings.API_V1_PREFIX)
+app.include_router(auth.router,              prefix=settings.API_V1_PREFIX)
+app.include_router(patients.router,          prefix=settings.API_V1_PREFIX)
+app.include_router(screenings.router,        prefix=settings.API_V1_PREFIX)
+app.include_router(dashboard.router,         prefix=settings.API_V1_PREFIX)
+app.include_router(reports_router.router,    prefix=settings.API_V1_PREFIX)
 
 # Ensure upload and log directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

@@ -99,6 +99,30 @@ class Screening(Base):
     clinician_notes = Column(Text, nullable=True)
     final_referral_priority = Column(Enum(ReferralPriority), nullable=True)
     
+    # ── Glaucoma results ──────────────────────────────────────────────
+    glaucoma_severity    = Column(Integer, nullable=True)   # 0-3
+    glaucoma_confidence  = Column(Float,   nullable=True)
+    glaucoma_label       = Column(String,  nullable=True)
+    glaucoma_message     = Column(Text,    nullable=True)
+    glaucoma_probabilities = Column(Text,  nullable=True)   # JSON string
+    glaucoma_requires_review = Column(Boolean, default=False)
+
+    # ── Cataract results (Phase 2) ────────────────────────────────────
+    cataract_severity    = Column(Integer, nullable=True)   # 0-3
+    cataract_confidence  = Column(Float,   nullable=True)
+    cataract_label       = Column(String,  nullable=True)
+    cataract_message     = Column(Text,    nullable=True)
+    cataract_probabilities = Column(Text,  nullable=True)   # JSON string
+    cataract_requires_review = Column(Boolean, default=False)
+    cataract_is_phase2   = Column(Boolean, default=True)
+
+    # ── Composite risk score ──────────────────────────────────────────
+    risk_score           = Column(Integer, nullable=True)   # 0-100
+    risk_category        = Column(String,  nullable=True)   # low/medium/high
+    risk_breakdown       = Column(Text,    nullable=True)   # JSON string
+    risk_recommendation  = Column(Text,    nullable=True)
+    risk_factors_present = Column(Text,    nullable=True)   # JSON string
+
     # Workflow status
     status = Column(Enum(ScreeningStatus), nullable=False, default=ScreeningStatus.IMAGE_UPLOADED)
     

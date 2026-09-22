@@ -189,19 +189,22 @@ class DRClassifier:
         )
 
         # ── Map score → severity (0–4) ────────────────────────────
-        if score < 0.08:
+        # DR raw score for a healthy eye: ~0.1–0.4
+        # Mild disease: ~0.5–0.9 | Moderate: ~1.0–1.6
+        # Severe: ~1.7–2.4 | Proliferative: >2.5
+        if score < 0.45:
             severity = 0
-        elif score < 0.18:
+        elif score < 1.00:
             severity = 1
-        elif score < 0.32:
+        elif score < 1.70:
             severity = 2
-        elif score < 0.50:
+        elif score < 2.50:
             severity = 3
         else:
             severity = 4
 
         # ── Confidence: higher when features are unambiguous ─────
-        boundaries = [0.08, 0.18, 0.32, 0.50]
+        boundaries = [0.45, 1.00, 1.70, 2.50]
         distances  = [abs(score - b) for b in boundaries]
         min_dist   = min(distances)
         # Scale to [0.65, 0.95]

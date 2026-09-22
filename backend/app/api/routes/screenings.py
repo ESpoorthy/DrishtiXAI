@@ -155,6 +155,36 @@ def analyze_screening(
         screening.prediction_confidence = result["prediction"]["confidence"]
         screening.class_probabilities = json.dumps(result["prediction"]["class_probabilities"])
         screening.requires_human_review = result["prediction"]["requires_human_review"]
+
+    # ── Glaucoma results ──────────────────────────────────────────────
+    if result.get("glaucoma"):
+        g = result["glaucoma"]
+        screening.glaucoma_severity    = g["severity"]
+        screening.glaucoma_confidence  = g["confidence"]
+        screening.glaucoma_label       = g["severity_label"]
+        screening.glaucoma_message     = g["screening_message"]
+        screening.glaucoma_probabilities = json.dumps(g["class_probabilities"])
+        screening.glaucoma_requires_review = g["requires_human_review"]
+
+    # ── Cataract results (Phase 2) ────────────────────────────────────
+    if result.get("cataract"):
+        c = result["cataract"]
+        screening.cataract_severity    = c["severity"]
+        screening.cataract_confidence  = c["confidence"]
+        screening.cataract_label       = c["severity_label"]
+        screening.cataract_message     = c["screening_message"]
+        screening.cataract_probabilities = json.dumps(c["class_probabilities"])
+        screening.cataract_requires_review = c["requires_human_review"]
+        screening.cataract_is_phase2   = c.get("is_phase2", True)
+
+    # ── Risk score ────────────────────────────────────────────────────
+    if result.get("risk_score"):
+        rs = result["risk_score"]
+        screening.risk_score           = rs["score"]
+        screening.risk_category        = rs["category"]
+        screening.risk_breakdown       = json.dumps(rs["breakdown"])
+        screening.risk_recommendation  = rs["recommendation"]
+        screening.risk_factors_present = json.dumps(rs["factors_present"])
     
     screening.model_version = result["model_version"]
     screening.is_demo_mode = result["is_demo_mode"]

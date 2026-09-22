@@ -13,6 +13,7 @@ import Layout from '@/components/Layout';
 import { api } from '@/lib/api';
 import { ScreeningResultBanner } from '@/components/ui/ScreeningResultBanner';
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar';
+import { MultiDiseaseResults } from '@/components/ui/MultiDiseaseResults';
 import { MedicalImage } from '@/components/ui/ImageViewer';
 import { ErrorBanner } from '@/components/ui/ErrorState';
 import { priorityBadge, qualityBadge, severityClass, confPct } from '@/lib/utils';
@@ -416,6 +417,11 @@ export default function NewScreening() {
                 isUncertain={isQualityFailed}
                 qualityGuidance={isQualityFailed ? screening.quality_guidance : undefined}
               />
+
+              {/* ── Multi-disease results ── */}
+              {!isQualityFailed && (
+                <MultiDiseaseResults screening={screening} />
+              )}
 
               {/* ── Images ── */}
               {!isQualityFailed && (
